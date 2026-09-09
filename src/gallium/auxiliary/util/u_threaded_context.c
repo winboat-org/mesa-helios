@@ -2765,6 +2765,12 @@ tc_buffer_map(struct pipe_context *_pipe,
 
             void *ret = pipe->buffer_map(pipe, tres->latest ? tres->latest : resource,
                                          0, PIPE_MAP_READ, &box2, &transfer2);
+            if (!ret) {
+               tc_clear_driver_thread(tc);
+               align_free(tres->cpu_storage);
+               tres->cpu_storage = NULL;
+               return NULL;
+            }
             memcpy(&((uint8_t*)tres->cpu_storage)[tres->valid_buffer_range.start],
                    ret,
                    valid_range_len);
@@ -2846,8 +2852,11 @@ tc_buffer_map(struct pipe_context *_pipe,
 
    void *ret = pipe->buffer_map(pipe, tres->latest ? tres->latest : resource,
                                 level, usage, box, transfer);
-   threaded_transfer(*transfer)->valid_buffer_range = &tres->valid_buffer_range;
-   threaded_transfer(*transfer)->cpu_storage_mapped = false;
+   /* A failed map leaves the transfer pointer unchanged. */
+   if (ret) {
+      threaded_transfer(*transfer)->valid_buffer_range = &tres->valid_buffer_range;
+      threaded_transfer(*transfer)->cpu_storage_mapped = false;
+   }
 
    if (!(usage & TC_TRANSFER_MAP_THREADED_UNSYNC))
       tc_clear_driver_thread(tc);
