@@ -175,44 +175,44 @@ vn_encode_VkBufferDeviceAddressCreateInfoEXT(struct vn_cs_encoder *enc, const Vk
 static inline size_t
 vn_sizeof_VkBufferCreateInfo_pnext(const void *val)
 {
-    const VkBaseInStructure *pnext = val;
+    const void *pnext = val;
     size_t size = 0;
 
     while (pnext) {
-        switch ((int32_t)pnext->sType) {
+        switch ((int32_t)(*(const VkStructureType *)pnext)) {
         case VK_STRUCTURE_TYPE_BUFFER_USAGE_FLAGS_2_CREATE_INFO:
             if (!vn_cs_renderer_protocol_has_extension(471 /* VK_KHR_maintenance5 */))
                 break;
             size += vn_sizeof_simple_pointer(pnext);
-            size += vn_sizeof_VkStructureType(&pnext->sType);
+            size += vn_sizeof_VkStructureType(pnext);
             size += vn_sizeof_VkBufferCreateInfo_pnext(((const VkBufferUsageFlags2CreateInfo *)pnext)->pNext);
-            size += vn_sizeof_VkBufferUsageFlags2CreateInfo_self((const VkBufferUsageFlags2CreateInfo *)pnext);
+            size += vn_sizeof_VkBufferUsageFlags2CreateInfo_self(pnext);
             return size;
         case VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_BUFFER_CREATE_INFO:
             size += vn_sizeof_simple_pointer(pnext);
-            size += vn_sizeof_VkStructureType(&pnext->sType);
+            size += vn_sizeof_VkStructureType(pnext);
             size += vn_sizeof_VkBufferCreateInfo_pnext(((const VkExternalMemoryBufferCreateInfo *)pnext)->pNext);
-            size += vn_sizeof_VkExternalMemoryBufferCreateInfo_self((const VkExternalMemoryBufferCreateInfo *)pnext);
+            size += vn_sizeof_VkExternalMemoryBufferCreateInfo_self(pnext);
             return size;
         case VK_STRUCTURE_TYPE_BUFFER_OPAQUE_CAPTURE_ADDRESS_CREATE_INFO:
             size += vn_sizeof_simple_pointer(pnext);
-            size += vn_sizeof_VkStructureType(&pnext->sType);
+            size += vn_sizeof_VkStructureType(pnext);
             size += vn_sizeof_VkBufferCreateInfo_pnext(((const VkBufferOpaqueCaptureAddressCreateInfo *)pnext)->pNext);
-            size += vn_sizeof_VkBufferOpaqueCaptureAddressCreateInfo_self((const VkBufferOpaqueCaptureAddressCreateInfo *)pnext);
+            size += vn_sizeof_VkBufferOpaqueCaptureAddressCreateInfo_self(pnext);
             return size;
         case VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_CREATE_INFO_EXT:
             if (!vn_cs_renderer_protocol_has_extension(245 /* VK_EXT_buffer_device_address */))
                 break;
             size += vn_sizeof_simple_pointer(pnext);
-            size += vn_sizeof_VkStructureType(&pnext->sType);
+            size += vn_sizeof_VkStructureType(pnext);
             size += vn_sizeof_VkBufferCreateInfo_pnext(((const VkBufferDeviceAddressCreateInfoEXT *)pnext)->pNext);
-            size += vn_sizeof_VkBufferDeviceAddressCreateInfoEXT_self((const VkBufferDeviceAddressCreateInfoEXT *)pnext);
+            size += vn_sizeof_VkBufferDeviceAddressCreateInfoEXT_self(pnext);
             return size;
         default:
             /* ignore unknown/unsupported struct */
             break;
         }
-        pnext = pnext->pNext;
+        memcpy(&pnext, (const char *)pnext + offsetof(VkBaseInStructure, pNext), sizeof(pnext));
     }
 
     return vn_sizeof_simple_pointer(NULL);
@@ -252,43 +252,43 @@ vn_sizeof_VkBufferCreateInfo(const VkBufferCreateInfo *val)
 static inline void
 vn_encode_VkBufferCreateInfo_pnext(struct vn_cs_encoder *enc, const void *val)
 {
-    const VkBaseInStructure *pnext = val;
+    const void *pnext = val;
 
     while (pnext) {
-        switch ((int32_t)pnext->sType) {
+        switch ((int32_t)(*(const VkStructureType *)pnext)) {
         case VK_STRUCTURE_TYPE_BUFFER_USAGE_FLAGS_2_CREATE_INFO:
             if (!vn_cs_renderer_protocol_has_extension(471 /* VK_KHR_maintenance5 */))
                 break;
             vn_encode_simple_pointer(enc, pnext);
-            vn_encode_VkStructureType(enc, &pnext->sType);
+            vn_encode_VkStructureType(enc, pnext);
             vn_encode_VkBufferCreateInfo_pnext(enc, ((const VkBufferUsageFlags2CreateInfo *)pnext)->pNext);
-            vn_encode_VkBufferUsageFlags2CreateInfo_self(enc, (const VkBufferUsageFlags2CreateInfo *)pnext);
+            vn_encode_VkBufferUsageFlags2CreateInfo_self(enc, pnext);
             return;
         case VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_BUFFER_CREATE_INFO:
             vn_encode_simple_pointer(enc, pnext);
-            vn_encode_VkStructureType(enc, &pnext->sType);
+            vn_encode_VkStructureType(enc, pnext);
             vn_encode_VkBufferCreateInfo_pnext(enc, ((const VkExternalMemoryBufferCreateInfo *)pnext)->pNext);
-            vn_encode_VkExternalMemoryBufferCreateInfo_self(enc, (const VkExternalMemoryBufferCreateInfo *)pnext);
+            vn_encode_VkExternalMemoryBufferCreateInfo_self(enc, pnext);
             return;
         case VK_STRUCTURE_TYPE_BUFFER_OPAQUE_CAPTURE_ADDRESS_CREATE_INFO:
             vn_encode_simple_pointer(enc, pnext);
-            vn_encode_VkStructureType(enc, &pnext->sType);
+            vn_encode_VkStructureType(enc, pnext);
             vn_encode_VkBufferCreateInfo_pnext(enc, ((const VkBufferOpaqueCaptureAddressCreateInfo *)pnext)->pNext);
-            vn_encode_VkBufferOpaqueCaptureAddressCreateInfo_self(enc, (const VkBufferOpaqueCaptureAddressCreateInfo *)pnext);
+            vn_encode_VkBufferOpaqueCaptureAddressCreateInfo_self(enc, pnext);
             return;
         case VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_CREATE_INFO_EXT:
             if (!vn_cs_renderer_protocol_has_extension(245 /* VK_EXT_buffer_device_address */))
                 break;
             vn_encode_simple_pointer(enc, pnext);
-            vn_encode_VkStructureType(enc, &pnext->sType);
+            vn_encode_VkStructureType(enc, pnext);
             vn_encode_VkBufferCreateInfo_pnext(enc, ((const VkBufferDeviceAddressCreateInfoEXT *)pnext)->pNext);
-            vn_encode_VkBufferDeviceAddressCreateInfoEXT_self(enc, (const VkBufferDeviceAddressCreateInfoEXT *)pnext);
+            vn_encode_VkBufferDeviceAddressCreateInfoEXT_self(enc, pnext);
             return;
         default:
             /* ignore unknown/unsupported struct */
             break;
         }
-        pnext = pnext->pNext;
+        memcpy(&pnext, (const char *)pnext + offsetof(VkBaseInStructure, pNext), sizeof(pnext));
     }
 
     vn_encode_simple_pointer(enc, NULL);
@@ -390,37 +390,33 @@ vn_encode_VkBindBufferMemoryDeviceGroupInfo(struct vn_cs_encoder *enc, const VkB
 static inline size_t
 vn_sizeof_VkBindBufferMemoryInfo_pnext(const void *val)
 {
-    (void)val;
-    return vn_sizeof_simple_pointer(NULL);
-#if 0
-    const VkBaseInStructure *pnext = val;
+    const void *pnext = val;
     size_t size = 0;
 
     while (pnext) {
-        switch ((int32_t)pnext->sType) {
+        switch ((int32_t)(*(const VkStructureType *)pnext)) {
         case VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_DEVICE_GROUP_INFO:
             size += vn_sizeof_simple_pointer(pnext);
-            size += vn_sizeof_VkStructureType(&pnext->sType);
+            size += vn_sizeof_VkStructureType(pnext);
             size += vn_sizeof_VkBindBufferMemoryInfo_pnext(((const VkBindBufferMemoryDeviceGroupInfo *)pnext)->pNext);
-            size += vn_sizeof_VkBindBufferMemoryDeviceGroupInfo_self((const VkBindBufferMemoryDeviceGroupInfo *)pnext);
+            size += vn_sizeof_VkBindBufferMemoryDeviceGroupInfo_self(pnext);
             return size;
         case VK_STRUCTURE_TYPE_BIND_MEMORY_STATUS:
             if (!vn_cs_renderer_protocol_has_extension(546 /* VK_KHR_maintenance6 */))
                 break;
             size += vn_sizeof_simple_pointer(pnext);
-            size += vn_sizeof_VkStructureType(&pnext->sType);
+            size += vn_sizeof_VkStructureType(pnext);
             size += vn_sizeof_VkBindBufferMemoryInfo_pnext(((const VkBindMemoryStatus *)pnext)->pNext);
-            size += vn_sizeof_VkBindMemoryStatus_self((const VkBindMemoryStatus *)pnext);
+            size += vn_sizeof_VkBindMemoryStatus_self(pnext);
             return size;
         default:
             /* ignore unknown/unsupported struct */
             break;
         }
-        pnext = pnext->pNext;
+        memcpy(&pnext, (const char *)pnext + offsetof(VkBaseInStructure, pNext), sizeof(pnext));
     }
 
     return vn_sizeof_simple_pointer(NULL);
-#endif
 }
 
 static inline size_t
@@ -449,36 +445,32 @@ vn_sizeof_VkBindBufferMemoryInfo(const VkBindBufferMemoryInfo *val)
 static inline void
 vn_encode_VkBindBufferMemoryInfo_pnext(struct vn_cs_encoder *enc, const void *val)
 {
-    (void)val;
-    vn_encode_simple_pointer(enc, NULL);
-#if 0
-    const VkBaseInStructure *pnext = val;
+    const void *pnext = val;
 
     while (pnext) {
-        switch ((int32_t)pnext->sType) {
+        switch ((int32_t)(*(const VkStructureType *)pnext)) {
         case VK_STRUCTURE_TYPE_BIND_BUFFER_MEMORY_DEVICE_GROUP_INFO:
             vn_encode_simple_pointer(enc, pnext);
-            vn_encode_VkStructureType(enc, &pnext->sType);
+            vn_encode_VkStructureType(enc, pnext);
             vn_encode_VkBindBufferMemoryInfo_pnext(enc, ((const VkBindBufferMemoryDeviceGroupInfo *)pnext)->pNext);
-            vn_encode_VkBindBufferMemoryDeviceGroupInfo_self(enc, (const VkBindBufferMemoryDeviceGroupInfo *)pnext);
+            vn_encode_VkBindBufferMemoryDeviceGroupInfo_self(enc, pnext);
             return;
         case VK_STRUCTURE_TYPE_BIND_MEMORY_STATUS:
             if (!vn_cs_renderer_protocol_has_extension(546 /* VK_KHR_maintenance6 */))
                 break;
             vn_encode_simple_pointer(enc, pnext);
-            vn_encode_VkStructureType(enc, &pnext->sType);
+            vn_encode_VkStructureType(enc, pnext);
             vn_encode_VkBindBufferMemoryInfo_pnext(enc, ((const VkBindMemoryStatus *)pnext)->pNext);
-            vn_encode_VkBindMemoryStatus_self(enc, (const VkBindMemoryStatus *)pnext);
+            vn_encode_VkBindMemoryStatus_self(enc, pnext);
             return;
         default:
             /* ignore unknown/unsupported struct */
             break;
         }
-        pnext = pnext->pNext;
+        memcpy(&pnext, (const char *)pnext + offsetof(VkBaseInStructure, pNext), sizeof(pnext));
     }
 
     vn_encode_simple_pointer(enc, NULL);
-#endif
 }
 
 static inline void

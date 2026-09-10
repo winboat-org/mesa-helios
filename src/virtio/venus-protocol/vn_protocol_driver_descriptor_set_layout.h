@@ -119,30 +119,30 @@ vn_encode_VkDescriptorSetLayoutBindingFlagsCreateInfo(struct vn_cs_encoder *enc,
 static inline size_t
 vn_sizeof_VkDescriptorSetLayoutCreateInfo_pnext(const void *val)
 {
-    const VkBaseInStructure *pnext = val;
+    const void *pnext = val;
     size_t size = 0;
 
     while (pnext) {
-        switch ((int32_t)pnext->sType) {
+        switch ((int32_t)(*(const VkStructureType *)pnext)) {
         case VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO:
             size += vn_sizeof_simple_pointer(pnext);
-            size += vn_sizeof_VkStructureType(&pnext->sType);
+            size += vn_sizeof_VkStructureType(pnext);
             size += vn_sizeof_VkDescriptorSetLayoutCreateInfo_pnext(((const VkDescriptorSetLayoutBindingFlagsCreateInfo *)pnext)->pNext);
-            size += vn_sizeof_VkDescriptorSetLayoutBindingFlagsCreateInfo_self((const VkDescriptorSetLayoutBindingFlagsCreateInfo *)pnext);
+            size += vn_sizeof_VkDescriptorSetLayoutBindingFlagsCreateInfo_self(pnext);
             return size;
         case VK_STRUCTURE_TYPE_MUTABLE_DESCRIPTOR_TYPE_CREATE_INFO_EXT:
             if (!vn_cs_renderer_protocol_has_extension(352 /* VK_VALVE_mutable_descriptor_type */) && !vn_cs_renderer_protocol_has_extension(495 /* VK_EXT_mutable_descriptor_type */))
                 break;
             size += vn_sizeof_simple_pointer(pnext);
-            size += vn_sizeof_VkStructureType(&pnext->sType);
+            size += vn_sizeof_VkStructureType(pnext);
             size += vn_sizeof_VkDescriptorSetLayoutCreateInfo_pnext(((const VkMutableDescriptorTypeCreateInfoEXT *)pnext)->pNext);
-            size += vn_sizeof_VkMutableDescriptorTypeCreateInfoEXT_self((const VkMutableDescriptorTypeCreateInfoEXT *)pnext);
+            size += vn_sizeof_VkMutableDescriptorTypeCreateInfoEXT_self(pnext);
             return size;
         default:
             /* ignore unknown/unsupported struct */
             break;
         }
-        pnext = pnext->pNext;
+        memcpy(&pnext, (const char *)pnext + offsetof(VkBaseInStructure, pNext), sizeof(pnext));
     }
 
     return vn_sizeof_simple_pointer(NULL);
@@ -180,29 +180,29 @@ vn_sizeof_VkDescriptorSetLayoutCreateInfo(const VkDescriptorSetLayoutCreateInfo 
 static inline void
 vn_encode_VkDescriptorSetLayoutCreateInfo_pnext(struct vn_cs_encoder *enc, const void *val)
 {
-    const VkBaseInStructure *pnext = val;
+    const void *pnext = val;
 
     while (pnext) {
-        switch ((int32_t)pnext->sType) {
+        switch ((int32_t)(*(const VkStructureType *)pnext)) {
         case VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO:
             vn_encode_simple_pointer(enc, pnext);
-            vn_encode_VkStructureType(enc, &pnext->sType);
+            vn_encode_VkStructureType(enc, pnext);
             vn_encode_VkDescriptorSetLayoutCreateInfo_pnext(enc, ((const VkDescriptorSetLayoutBindingFlagsCreateInfo *)pnext)->pNext);
-            vn_encode_VkDescriptorSetLayoutBindingFlagsCreateInfo_self(enc, (const VkDescriptorSetLayoutBindingFlagsCreateInfo *)pnext);
+            vn_encode_VkDescriptorSetLayoutBindingFlagsCreateInfo_self(enc, pnext);
             return;
         case VK_STRUCTURE_TYPE_MUTABLE_DESCRIPTOR_TYPE_CREATE_INFO_EXT:
             if (!vn_cs_renderer_protocol_has_extension(352 /* VK_VALVE_mutable_descriptor_type */) && !vn_cs_renderer_protocol_has_extension(495 /* VK_EXT_mutable_descriptor_type */))
                 break;
             vn_encode_simple_pointer(enc, pnext);
-            vn_encode_VkStructureType(enc, &pnext->sType);
+            vn_encode_VkStructureType(enc, pnext);
             vn_encode_VkDescriptorSetLayoutCreateInfo_pnext(enc, ((const VkMutableDescriptorTypeCreateInfoEXT *)pnext)->pNext);
-            vn_encode_VkMutableDescriptorTypeCreateInfoEXT_self(enc, (const VkMutableDescriptorTypeCreateInfoEXT *)pnext);
+            vn_encode_VkMutableDescriptorTypeCreateInfoEXT_self(enc, pnext);
             return;
         default:
             /* ignore unknown/unsupported struct */
             break;
         }
-        pnext = pnext->pNext;
+        memcpy(&pnext, (const char *)pnext + offsetof(VkBaseInStructure, pNext), sizeof(pnext));
     }
 
     vn_encode_simple_pointer(enc, NULL);
@@ -345,22 +345,22 @@ vn_encode_VkDescriptorSetVariableDescriptorCountLayoutSupport_partial(struct vn_
 static inline size_t
 vn_sizeof_VkDescriptorSetLayoutSupport_pnext(const void *val)
 {
-    const VkBaseInStructure *pnext = val;
+    const void *pnext = val;
     size_t size = 0;
 
     while (pnext) {
-        switch ((int32_t)pnext->sType) {
+        switch ((int32_t)(*(const VkStructureType *)pnext)) {
         case VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_LAYOUT_SUPPORT:
             size += vn_sizeof_simple_pointer(pnext);
-            size += vn_sizeof_VkStructureType(&pnext->sType);
+            size += vn_sizeof_VkStructureType(pnext);
             size += vn_sizeof_VkDescriptorSetLayoutSupport_pnext(((const VkDescriptorSetVariableDescriptorCountLayoutSupport *)pnext)->pNext);
-            size += vn_sizeof_VkDescriptorSetVariableDescriptorCountLayoutSupport_self((const VkDescriptorSetVariableDescriptorCountLayoutSupport *)pnext);
+            size += vn_sizeof_VkDescriptorSetVariableDescriptorCountLayoutSupport_self(pnext);
             return size;
         default:
             /* ignore unknown/unsupported struct */
             break;
         }
-        pnext = pnext->pNext;
+        memcpy(&pnext, (const char *)pnext + offsetof(VkBaseInStructure, pNext), sizeof(pnext));
     }
 
     return vn_sizeof_simple_pointer(NULL);
@@ -390,7 +390,7 @@ vn_sizeof_VkDescriptorSetLayoutSupport(const VkDescriptorSetLayoutSupport *val)
 static inline void
 vn_decode_VkDescriptorSetLayoutSupport_pnext(struct vn_cs_decoder *dec, const void *val)
 {
-    VkBaseOutStructure *pnext = (VkBaseOutStructure *)val;
+    void *pnext = (VkBaseOutStructure *)val;
     VkStructureType stype;
 
     if (!vn_decode_simple_pointer(dec))
@@ -399,16 +399,16 @@ vn_decode_VkDescriptorSetLayoutSupport_pnext(struct vn_cs_decoder *dec, const vo
     vn_decode_VkStructureType(dec, &stype);
     while (true) {
         assert(pnext);
-        if (pnext->sType == stype)
+        if (*(const VkStructureType *)pnext == stype)
             break;
 
-        pnext = pnext->pNext;
+        memcpy(&pnext, (const char *)pnext + offsetof(VkBaseOutStructure, pNext), sizeof(pnext));
     }
 
-    switch ((int32_t)pnext->sType) {
+    switch ((int32_t)(*(const VkStructureType *)pnext)) {
     case VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_LAYOUT_SUPPORT:
         vn_decode_VkDescriptorSetLayoutSupport_pnext(dec, ((VkDescriptorSetVariableDescriptorCountLayoutSupport *)pnext)->pNext);
-        vn_decode_VkDescriptorSetVariableDescriptorCountLayoutSupport_self(dec, (VkDescriptorSetVariableDescriptorCountLayoutSupport *)pnext);
+        vn_decode_VkDescriptorSetVariableDescriptorCountLayoutSupport_self(dec, pnext);
         break;
     default:
         assert(false);
@@ -438,22 +438,22 @@ vn_decode_VkDescriptorSetLayoutSupport(struct vn_cs_decoder *dec, VkDescriptorSe
 static inline size_t
 vn_sizeof_VkDescriptorSetLayoutSupport_pnext_partial(const void *val)
 {
-    const VkBaseInStructure *pnext = val;
+    const void *pnext = val;
     size_t size = 0;
 
     while (pnext) {
-        switch ((int32_t)pnext->sType) {
+        switch ((int32_t)(*(const VkStructureType *)pnext)) {
         case VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_LAYOUT_SUPPORT:
             size += vn_sizeof_simple_pointer(pnext);
-            size += vn_sizeof_VkStructureType(&pnext->sType);
+            size += vn_sizeof_VkStructureType(pnext);
             size += vn_sizeof_VkDescriptorSetLayoutSupport_pnext_partial(((const VkDescriptorSetVariableDescriptorCountLayoutSupport *)pnext)->pNext);
-            size += vn_sizeof_VkDescriptorSetVariableDescriptorCountLayoutSupport_self_partial((const VkDescriptorSetVariableDescriptorCountLayoutSupport *)pnext);
+            size += vn_sizeof_VkDescriptorSetVariableDescriptorCountLayoutSupport_self_partial(pnext);
             return size;
         default:
             /* ignore unknown/unsupported struct */
             break;
         }
-        pnext = pnext->pNext;
+        memcpy(&pnext, (const char *)pnext + offsetof(VkBaseInStructure, pNext), sizeof(pnext));
     }
 
     return vn_sizeof_simple_pointer(NULL);
@@ -483,21 +483,21 @@ vn_sizeof_VkDescriptorSetLayoutSupport_partial(const VkDescriptorSetLayoutSuppor
 static inline void
 vn_encode_VkDescriptorSetLayoutSupport_pnext_partial(struct vn_cs_encoder *enc, const void *val)
 {
-    const VkBaseInStructure *pnext = val;
+    const void *pnext = val;
 
     while (pnext) {
-        switch ((int32_t)pnext->sType) {
+        switch ((int32_t)(*(const VkStructureType *)pnext)) {
         case VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_LAYOUT_SUPPORT:
             vn_encode_simple_pointer(enc, pnext);
-            vn_encode_VkStructureType(enc, &pnext->sType);
+            vn_encode_VkStructureType(enc, pnext);
             vn_encode_VkDescriptorSetLayoutSupport_pnext_partial(enc, ((const VkDescriptorSetVariableDescriptorCountLayoutSupport *)pnext)->pNext);
-            vn_encode_VkDescriptorSetVariableDescriptorCountLayoutSupport_self_partial(enc, (const VkDescriptorSetVariableDescriptorCountLayoutSupport *)pnext);
+            vn_encode_VkDescriptorSetVariableDescriptorCountLayoutSupport_self_partial(enc, pnext);
             return;
         default:
             /* ignore unknown/unsupported struct */
             break;
         }
-        pnext = pnext->pNext;
+        memcpy(&pnext, (const char *)pnext + offsetof(VkBaseInStructure, pNext), sizeof(pnext));
     }
 
     vn_encode_simple_pointer(enc, NULL);

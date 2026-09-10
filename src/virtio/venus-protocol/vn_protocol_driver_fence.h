@@ -76,22 +76,22 @@ vn_encode_VkExportFenceCreateInfo(struct vn_cs_encoder *enc, const VkExportFence
 static inline size_t
 vn_sizeof_VkFenceCreateInfo_pnext(const void *val)
 {
-    const VkBaseInStructure *pnext = val;
+    const void *pnext = val;
     size_t size = 0;
 
     while (pnext) {
-        switch ((int32_t)pnext->sType) {
+        switch ((int32_t)(*(const VkStructureType *)pnext)) {
         case VK_STRUCTURE_TYPE_EXPORT_FENCE_CREATE_INFO:
             size += vn_sizeof_simple_pointer(pnext);
-            size += vn_sizeof_VkStructureType(&pnext->sType);
+            size += vn_sizeof_VkStructureType(pnext);
             size += vn_sizeof_VkFenceCreateInfo_pnext(((const VkExportFenceCreateInfo *)pnext)->pNext);
-            size += vn_sizeof_VkExportFenceCreateInfo_self((const VkExportFenceCreateInfo *)pnext);
+            size += vn_sizeof_VkExportFenceCreateInfo_self(pnext);
             return size;
         default:
             /* ignore unknown/unsupported struct */
             break;
         }
-        pnext = pnext->pNext;
+        memcpy(&pnext, (const char *)pnext + offsetof(VkBaseInStructure, pNext), sizeof(pnext));
     }
 
     return vn_sizeof_simple_pointer(NULL);
@@ -121,21 +121,21 @@ vn_sizeof_VkFenceCreateInfo(const VkFenceCreateInfo *val)
 static inline void
 vn_encode_VkFenceCreateInfo_pnext(struct vn_cs_encoder *enc, const void *val)
 {
-    const VkBaseInStructure *pnext = val;
+    const void *pnext = val;
 
     while (pnext) {
-        switch ((int32_t)pnext->sType) {
+        switch ((int32_t)(*(const VkStructureType *)pnext)) {
         case VK_STRUCTURE_TYPE_EXPORT_FENCE_CREATE_INFO:
             vn_encode_simple_pointer(enc, pnext);
-            vn_encode_VkStructureType(enc, &pnext->sType);
+            vn_encode_VkStructureType(enc, pnext);
             vn_encode_VkFenceCreateInfo_pnext(enc, ((const VkExportFenceCreateInfo *)pnext)->pNext);
-            vn_encode_VkExportFenceCreateInfo_self(enc, (const VkExportFenceCreateInfo *)pnext);
+            vn_encode_VkExportFenceCreateInfo_self(enc, pnext);
             return;
         default:
             /* ignore unknown/unsupported struct */
             break;
         }
-        pnext = pnext->pNext;
+        memcpy(&pnext, (const char *)pnext + offsetof(VkBaseInStructure, pNext), sizeof(pnext));
     }
 
     vn_encode_simple_pointer(enc, NULL);

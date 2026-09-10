@@ -295,47 +295,47 @@ vn_encode_VkImportMemoryResourceInfoMESA(struct vn_cs_encoder *enc, const VkImpo
 static inline size_t
 vn_sizeof_VkMemoryAllocateInfo_pnext(const void *val)
 {
-    const VkBaseInStructure *pnext = val;
+    const void *pnext = val;
     size_t size = 0;
 
     while (pnext) {
-        switch ((int32_t)pnext->sType) {
+        switch ((int32_t)(*(const VkStructureType *)pnext)) {
         case VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO:
             size += vn_sizeof_simple_pointer(pnext);
-            size += vn_sizeof_VkStructureType(&pnext->sType);
+            size += vn_sizeof_VkStructureType(pnext);
             size += vn_sizeof_VkMemoryAllocateInfo_pnext(((const VkExportMemoryAllocateInfo *)pnext)->pNext);
-            size += vn_sizeof_VkExportMemoryAllocateInfo_self((const VkExportMemoryAllocateInfo *)pnext);
+            size += vn_sizeof_VkExportMemoryAllocateInfo_self(pnext);
             return size;
         case VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO:
             size += vn_sizeof_simple_pointer(pnext);
-            size += vn_sizeof_VkStructureType(&pnext->sType);
+            size += vn_sizeof_VkStructureType(pnext);
             size += vn_sizeof_VkMemoryAllocateInfo_pnext(((const VkMemoryAllocateFlagsInfo *)pnext)->pNext);
-            size += vn_sizeof_VkMemoryAllocateFlagsInfo_self((const VkMemoryAllocateFlagsInfo *)pnext);
+            size += vn_sizeof_VkMemoryAllocateFlagsInfo_self(pnext);
             return size;
         case VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO:
             size += vn_sizeof_simple_pointer(pnext);
-            size += vn_sizeof_VkStructureType(&pnext->sType);
+            size += vn_sizeof_VkStructureType(pnext);
             size += vn_sizeof_VkMemoryAllocateInfo_pnext(((const VkMemoryDedicatedAllocateInfo *)pnext)->pNext);
-            size += vn_sizeof_VkMemoryDedicatedAllocateInfo_self((const VkMemoryDedicatedAllocateInfo *)pnext);
+            size += vn_sizeof_VkMemoryDedicatedAllocateInfo_self(pnext);
             return size;
         case VK_STRUCTURE_TYPE_MEMORY_OPAQUE_CAPTURE_ADDRESS_ALLOCATE_INFO:
             size += vn_sizeof_simple_pointer(pnext);
-            size += vn_sizeof_VkStructureType(&pnext->sType);
+            size += vn_sizeof_VkStructureType(pnext);
             size += vn_sizeof_VkMemoryAllocateInfo_pnext(((const VkMemoryOpaqueCaptureAddressAllocateInfo *)pnext)->pNext);
-            size += vn_sizeof_VkMemoryOpaqueCaptureAddressAllocateInfo_self((const VkMemoryOpaqueCaptureAddressAllocateInfo *)pnext);
+            size += vn_sizeof_VkMemoryOpaqueCaptureAddressAllocateInfo_self(pnext);
             return size;
         case VK_STRUCTURE_TYPE_IMPORT_MEMORY_RESOURCE_INFO_MESA:
             size += vn_sizeof_simple_pointer(pnext);
-            size += vn_sizeof_VkStructureType(&pnext->sType);
+            size += vn_sizeof_VkStructureType(pnext);
             size += vn_sizeof_VkMemoryAllocateInfo_pnext(((const VkImportMemoryResourceInfoMESA *)pnext)->pNext);
-            size += vn_sizeof_VkImportMemoryResourceInfoMESA_self((const VkImportMemoryResourceInfoMESA *)pnext);
+            size += vn_sizeof_VkImportMemoryResourceInfoMESA_self(pnext);
             return size;
         case VK_STRUCTURE_TYPE_IMPORT_MEMORY_FD_INFO_KHR:
         default:
             /* ignore unknown/unsupported struct */
             break;
         }
-        pnext = pnext->pNext;
+        memcpy(&pnext, (const char *)pnext + offsetof(VkBaseInStructure, pNext), sizeof(pnext));
     }
 
     return vn_sizeof_simple_pointer(NULL);
@@ -366,46 +366,46 @@ vn_sizeof_VkMemoryAllocateInfo(const VkMemoryAllocateInfo *val)
 static inline void
 vn_encode_VkMemoryAllocateInfo_pnext(struct vn_cs_encoder *enc, const void *val)
 {
-    const VkBaseInStructure *pnext = val;
+    const void *pnext = val;
 
     while (pnext) {
-        switch ((int32_t)pnext->sType) {
+        switch ((int32_t)(*(const VkStructureType *)pnext)) {
         case VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO:
             vn_encode_simple_pointer(enc, pnext);
-            vn_encode_VkStructureType(enc, &pnext->sType);
+            vn_encode_VkStructureType(enc, pnext);
             vn_encode_VkMemoryAllocateInfo_pnext(enc, ((const VkExportMemoryAllocateInfo *)pnext)->pNext);
-            vn_encode_VkExportMemoryAllocateInfo_self(enc, (const VkExportMemoryAllocateInfo *)pnext);
+            vn_encode_VkExportMemoryAllocateInfo_self(enc, pnext);
             return;
         case VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_FLAGS_INFO:
             vn_encode_simple_pointer(enc, pnext);
-            vn_encode_VkStructureType(enc, &pnext->sType);
+            vn_encode_VkStructureType(enc, pnext);
             vn_encode_VkMemoryAllocateInfo_pnext(enc, ((const VkMemoryAllocateFlagsInfo *)pnext)->pNext);
-            vn_encode_VkMemoryAllocateFlagsInfo_self(enc, (const VkMemoryAllocateFlagsInfo *)pnext);
+            vn_encode_VkMemoryAllocateFlagsInfo_self(enc, pnext);
             return;
         case VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO:
             vn_encode_simple_pointer(enc, pnext);
-            vn_encode_VkStructureType(enc, &pnext->sType);
+            vn_encode_VkStructureType(enc, pnext);
             vn_encode_VkMemoryAllocateInfo_pnext(enc, ((const VkMemoryDedicatedAllocateInfo *)pnext)->pNext);
-            vn_encode_VkMemoryDedicatedAllocateInfo_self(enc, (const VkMemoryDedicatedAllocateInfo *)pnext);
+            vn_encode_VkMemoryDedicatedAllocateInfo_self(enc, pnext);
             return;
         case VK_STRUCTURE_TYPE_MEMORY_OPAQUE_CAPTURE_ADDRESS_ALLOCATE_INFO:
             vn_encode_simple_pointer(enc, pnext);
-            vn_encode_VkStructureType(enc, &pnext->sType);
+            vn_encode_VkStructureType(enc, pnext);
             vn_encode_VkMemoryAllocateInfo_pnext(enc, ((const VkMemoryOpaqueCaptureAddressAllocateInfo *)pnext)->pNext);
-            vn_encode_VkMemoryOpaqueCaptureAddressAllocateInfo_self(enc, (const VkMemoryOpaqueCaptureAddressAllocateInfo *)pnext);
+            vn_encode_VkMemoryOpaqueCaptureAddressAllocateInfo_self(enc, pnext);
             return;
         case VK_STRUCTURE_TYPE_IMPORT_MEMORY_RESOURCE_INFO_MESA:
             vn_encode_simple_pointer(enc, pnext);
-            vn_encode_VkStructureType(enc, &pnext->sType);
+            vn_encode_VkStructureType(enc, pnext);
             vn_encode_VkMemoryAllocateInfo_pnext(enc, ((const VkImportMemoryResourceInfoMESA *)pnext)->pNext);
-            vn_encode_VkImportMemoryResourceInfoMESA_self(enc, (const VkImportMemoryResourceInfoMESA *)pnext);
+            vn_encode_VkImportMemoryResourceInfoMESA_self(enc, pnext);
             return;
         case VK_STRUCTURE_TYPE_IMPORT_MEMORY_FD_INFO_KHR:
         default:
             /* ignore unknown/unsupported struct */
             break;
         }
-        pnext = pnext->pNext;
+        memcpy(&pnext, (const char *)pnext + offsetof(VkBaseInStructure, pNext), sizeof(pnext));
     }
 
     vn_encode_simple_pointer(enc, NULL);
@@ -706,22 +706,22 @@ vn_encode_VkMemoryResourceAllocationSizePropertiesMESA_partial(struct vn_cs_enco
 static inline size_t
 vn_sizeof_VkMemoryResourcePropertiesMESA_pnext(const void *val)
 {
-    const VkBaseInStructure *pnext = val;
+    const void *pnext = val;
     size_t size = 0;
 
     while (pnext) {
-        switch ((int32_t)pnext->sType) {
+        switch ((int32_t)(*(const VkStructureType *)pnext)) {
         case VK_STRUCTURE_TYPE_MEMORY_RESOURCE_ALLOCATION_SIZE_PROPERTIES_MESA:
             size += vn_sizeof_simple_pointer(pnext);
-            size += vn_sizeof_VkStructureType(&pnext->sType);
+            size += vn_sizeof_VkStructureType(pnext);
             size += vn_sizeof_VkMemoryResourcePropertiesMESA_pnext(((const VkMemoryResourceAllocationSizePropertiesMESA *)pnext)->pNext);
-            size += vn_sizeof_VkMemoryResourceAllocationSizePropertiesMESA_self((const VkMemoryResourceAllocationSizePropertiesMESA *)pnext);
+            size += vn_sizeof_VkMemoryResourceAllocationSizePropertiesMESA_self(pnext);
             return size;
         default:
             /* ignore unknown/unsupported struct */
             break;
         }
-        pnext = pnext->pNext;
+        memcpy(&pnext, (const char *)pnext + offsetof(VkBaseInStructure, pNext), sizeof(pnext));
     }
 
     return vn_sizeof_simple_pointer(NULL);
@@ -751,7 +751,7 @@ vn_sizeof_VkMemoryResourcePropertiesMESA(const VkMemoryResourcePropertiesMESA *v
 static inline void
 vn_decode_VkMemoryResourcePropertiesMESA_pnext(struct vn_cs_decoder *dec, const void *val)
 {
-    VkBaseOutStructure *pnext = (VkBaseOutStructure *)val;
+    void *pnext = (VkBaseOutStructure *)val;
     VkStructureType stype;
 
     if (!vn_decode_simple_pointer(dec))
@@ -760,16 +760,16 @@ vn_decode_VkMemoryResourcePropertiesMESA_pnext(struct vn_cs_decoder *dec, const 
     vn_decode_VkStructureType(dec, &stype);
     while (true) {
         assert(pnext);
-        if (pnext->sType == stype)
+        if (*(const VkStructureType *)pnext == stype)
             break;
 
-        pnext = pnext->pNext;
+        memcpy(&pnext, (const char *)pnext + offsetof(VkBaseOutStructure, pNext), sizeof(pnext));
     }
 
-    switch ((int32_t)pnext->sType) {
+    switch ((int32_t)(*(const VkStructureType *)pnext)) {
     case VK_STRUCTURE_TYPE_MEMORY_RESOURCE_ALLOCATION_SIZE_PROPERTIES_MESA:
         vn_decode_VkMemoryResourcePropertiesMESA_pnext(dec, ((VkMemoryResourceAllocationSizePropertiesMESA *)pnext)->pNext);
-        vn_decode_VkMemoryResourceAllocationSizePropertiesMESA_self(dec, (VkMemoryResourceAllocationSizePropertiesMESA *)pnext);
+        vn_decode_VkMemoryResourceAllocationSizePropertiesMESA_self(dec, pnext);
         break;
     default:
         assert(false);
@@ -799,22 +799,22 @@ vn_decode_VkMemoryResourcePropertiesMESA(struct vn_cs_decoder *dec, VkMemoryReso
 static inline size_t
 vn_sizeof_VkMemoryResourcePropertiesMESA_pnext_partial(const void *val)
 {
-    const VkBaseInStructure *pnext = val;
+    const void *pnext = val;
     size_t size = 0;
 
     while (pnext) {
-        switch ((int32_t)pnext->sType) {
+        switch ((int32_t)(*(const VkStructureType *)pnext)) {
         case VK_STRUCTURE_TYPE_MEMORY_RESOURCE_ALLOCATION_SIZE_PROPERTIES_MESA:
             size += vn_sizeof_simple_pointer(pnext);
-            size += vn_sizeof_VkStructureType(&pnext->sType);
+            size += vn_sizeof_VkStructureType(pnext);
             size += vn_sizeof_VkMemoryResourcePropertiesMESA_pnext_partial(((const VkMemoryResourceAllocationSizePropertiesMESA *)pnext)->pNext);
-            size += vn_sizeof_VkMemoryResourceAllocationSizePropertiesMESA_self_partial((const VkMemoryResourceAllocationSizePropertiesMESA *)pnext);
+            size += vn_sizeof_VkMemoryResourceAllocationSizePropertiesMESA_self_partial(pnext);
             return size;
         default:
             /* ignore unknown/unsupported struct */
             break;
         }
-        pnext = pnext->pNext;
+        memcpy(&pnext, (const char *)pnext + offsetof(VkBaseInStructure, pNext), sizeof(pnext));
     }
 
     return vn_sizeof_simple_pointer(NULL);
@@ -844,21 +844,21 @@ vn_sizeof_VkMemoryResourcePropertiesMESA_partial(const VkMemoryResourcePropertie
 static inline void
 vn_encode_VkMemoryResourcePropertiesMESA_pnext_partial(struct vn_cs_encoder *enc, const void *val)
 {
-    const VkBaseInStructure *pnext = val;
+    const void *pnext = val;
 
     while (pnext) {
-        switch ((int32_t)pnext->sType) {
+        switch ((int32_t)(*(const VkStructureType *)pnext)) {
         case VK_STRUCTURE_TYPE_MEMORY_RESOURCE_ALLOCATION_SIZE_PROPERTIES_MESA:
             vn_encode_simple_pointer(enc, pnext);
-            vn_encode_VkStructureType(enc, &pnext->sType);
+            vn_encode_VkStructureType(enc, pnext);
             vn_encode_VkMemoryResourcePropertiesMESA_pnext_partial(enc, ((const VkMemoryResourceAllocationSizePropertiesMESA *)pnext)->pNext);
-            vn_encode_VkMemoryResourceAllocationSizePropertiesMESA_self_partial(enc, (const VkMemoryResourceAllocationSizePropertiesMESA *)pnext);
+            vn_encode_VkMemoryResourceAllocationSizePropertiesMESA_self_partial(enc, pnext);
             return;
         default:
             /* ignore unknown/unsupported struct */
             break;
         }
-        pnext = pnext->pNext;
+        memcpy(&pnext, (const char *)pnext + offsetof(VkBaseInStructure, pNext), sizeof(pnext));
     }
 
     vn_encode_simple_pointer(enc, NULL);

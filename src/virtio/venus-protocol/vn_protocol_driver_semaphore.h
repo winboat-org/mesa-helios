@@ -76,28 +76,28 @@ vn_encode_VkExportSemaphoreCreateInfo(struct vn_cs_encoder *enc, const VkExportS
 static inline size_t
 vn_sizeof_VkSemaphoreCreateInfo_pnext(const void *val)
 {
-    const VkBaseInStructure *pnext = val;
+    const void *pnext = val;
     size_t size = 0;
 
     while (pnext) {
-        switch ((int32_t)pnext->sType) {
+        switch ((int32_t)(*(const VkStructureType *)pnext)) {
         case VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO:
             size += vn_sizeof_simple_pointer(pnext);
-            size += vn_sizeof_VkStructureType(&pnext->sType);
+            size += vn_sizeof_VkStructureType(pnext);
             size += vn_sizeof_VkSemaphoreCreateInfo_pnext(((const VkExportSemaphoreCreateInfo *)pnext)->pNext);
-            size += vn_sizeof_VkExportSemaphoreCreateInfo_self((const VkExportSemaphoreCreateInfo *)pnext);
+            size += vn_sizeof_VkExportSemaphoreCreateInfo_self(pnext);
             return size;
         case VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO:
             size += vn_sizeof_simple_pointer(pnext);
-            size += vn_sizeof_VkStructureType(&pnext->sType);
+            size += vn_sizeof_VkStructureType(pnext);
             size += vn_sizeof_VkSemaphoreCreateInfo_pnext(((const VkSemaphoreTypeCreateInfo *)pnext)->pNext);
-            size += vn_sizeof_VkSemaphoreTypeCreateInfo_self((const VkSemaphoreTypeCreateInfo *)pnext);
+            size += vn_sizeof_VkSemaphoreTypeCreateInfo_self(pnext);
             return size;
         default:
             /* ignore unknown/unsupported struct */
             break;
         }
-        pnext = pnext->pNext;
+        memcpy(&pnext, (const char *)pnext + offsetof(VkBaseInStructure, pNext), sizeof(pnext));
     }
 
     return vn_sizeof_simple_pointer(NULL);
@@ -127,27 +127,27 @@ vn_sizeof_VkSemaphoreCreateInfo(const VkSemaphoreCreateInfo *val)
 static inline void
 vn_encode_VkSemaphoreCreateInfo_pnext(struct vn_cs_encoder *enc, const void *val)
 {
-    const VkBaseInStructure *pnext = val;
+    const void *pnext = val;
 
     while (pnext) {
-        switch ((int32_t)pnext->sType) {
+        switch ((int32_t)(*(const VkStructureType *)pnext)) {
         case VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO:
             vn_encode_simple_pointer(enc, pnext);
-            vn_encode_VkStructureType(enc, &pnext->sType);
+            vn_encode_VkStructureType(enc, pnext);
             vn_encode_VkSemaphoreCreateInfo_pnext(enc, ((const VkExportSemaphoreCreateInfo *)pnext)->pNext);
-            vn_encode_VkExportSemaphoreCreateInfo_self(enc, (const VkExportSemaphoreCreateInfo *)pnext);
+            vn_encode_VkExportSemaphoreCreateInfo_self(enc, pnext);
             return;
         case VK_STRUCTURE_TYPE_SEMAPHORE_TYPE_CREATE_INFO:
             vn_encode_simple_pointer(enc, pnext);
-            vn_encode_VkStructureType(enc, &pnext->sType);
+            vn_encode_VkStructureType(enc, pnext);
             vn_encode_VkSemaphoreCreateInfo_pnext(enc, ((const VkSemaphoreTypeCreateInfo *)pnext)->pNext);
-            vn_encode_VkSemaphoreTypeCreateInfo_self(enc, (const VkSemaphoreTypeCreateInfo *)pnext);
+            vn_encode_VkSemaphoreTypeCreateInfo_self(enc, pnext);
             return;
         default:
             /* ignore unknown/unsupported struct */
             break;
         }
-        pnext = pnext->pNext;
+        memcpy(&pnext, (const char *)pnext + offsetof(VkBaseInStructure, pNext), sizeof(pnext));
     }
 
     vn_encode_simple_pointer(enc, NULL);

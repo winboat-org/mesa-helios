@@ -10,7 +10,7 @@
 
 #include "vn_protocol_driver_defines.h"
 
-#define VN_INFO_EXTENSION_MAX_NUMBER (643)
+#define VN_INFO_EXTENSION_MAX_NUMBER (679)
 
 struct vn_info_extension {
    const char *name;
@@ -19,8 +19,8 @@ struct vn_info_extension {
 };
 
 /* sorted by extension names for bsearch */
-static const uint32_t _vn_info_extension_count = 187;
-static const struct vn_info_extension _vn_info_extensions[187] = {
+static const uint32_t _vn_info_extension_count = 202;
+static const struct vn_info_extension _vn_info_extensions[202] = {
    { "VK_ARM_rasterization_order_attachment_access", 343, 1 },
    { "VK_EXT_4444_formats", 341, 1 },
    { "VK_EXT_attachment_feedback_loop_dynamic_state", 525, 1 },
@@ -42,6 +42,7 @@ static const struct vn_info_extension _vn_info_extensions[187] = {
    { "VK_EXT_depth_range_unrestricted", 14, 1 },
    { "VK_EXT_descriptor_heap", 136, 1 },
    { "VK_EXT_descriptor_indexing", 162, 2 },
+   { "VK_EXT_device_generated_commands", 573, 1 },
    { "VK_EXT_dynamic_rendering_unused_attachments", 500, 1 },
    { "VK_EXT_extended_dynamic_state", 268, 1 },
    { "VK_EXT_extended_dynamic_state2", 378, 1 },
@@ -80,12 +81,14 @@ static const struct vn_info_extension _vn_info_extensions[187] = {
    { "VK_EXT_pipeline_protected_access", 467, 1 },
    { "VK_EXT_pipeline_robustness", 69, 1 },
    { "VK_EXT_post_depth_coverage", 156, 1 },
+   { "VK_EXT_primitive_restart_index", 679, 1 },
    { "VK_EXT_primitive_topology_list_restart", 357, 1 },
    { "VK_EXT_primitives_generated_query", 383, 1 },
    { "VK_EXT_private_data", 296, 1 },
    { "VK_EXT_provoking_vertex", 255, 1 },
    { "VK_EXT_queue_family_foreign", 127, 1 },
    { "VK_EXT_rasterization_order_attachment_access", 464, 1 },
+   { "VK_EXT_rgba10x6_formats", 345, 1 },
    { "VK_EXT_robustness2", 287, 1 },
    { "VK_EXT_sample_locations", 144, 1 },
    { "VK_EXT_sampler_filter_minmax", 131, 2 },
@@ -97,9 +100,11 @@ static const struct vn_info_extension _vn_info_extensions[187] = {
    { "VK_EXT_shader_float8", 568, 1 },
    { "VK_EXT_shader_image_atomic_int64", 235, 1 },
    { "VK_EXT_shader_replicated_composites", 565, 1 },
+   { "VK_EXT_shader_split_barrier", 306, 1 },
    { "VK_EXT_shader_stencil_export", 141, 1 },
    { "VK_EXT_shader_subgroup_ballot", 65, 1 },
    { "VK_EXT_shader_subgroup_vote", 66, 1 },
+   { "VK_EXT_shader_tile_image", 396, 1 },
    { "VK_EXT_shader_uniform_buffer_unsized_array", 643, 1 },
    { "VK_EXT_shader_viewport_index_layer", 163, 1 },
    { "VK_EXT_subgroup_size_control", 226, 2 },
@@ -108,9 +113,11 @@ static const struct vn_info_extension _vn_info_extensions[187] = {
    { "VK_EXT_tooling_info", 246, 1 },
    { "VK_EXT_transform_feedback", 29, 1 },
    { "VK_EXT_vertex_attribute_divisor", 191, 3 },
+   { "VK_EXT_vertex_attribute_robustness", 609, 1 },
    { "VK_EXT_vertex_input_dynamic_state", 353, 2 },
    { "VK_EXT_ycbcr_2plane_444_formats", 331, 1 },
    { "VK_EXT_ycbcr_image_arrays", 253, 1 },
+   { "VK_EXT_zero_initialize_device_memory", 621, 1 },
    { "VK_GOOGLE_decorate_string", 225, 1 },
    { "VK_GOOGLE_hlsl_functionality1", 224, 1 },
    { "VK_GOOGLE_user_type", 290, 1 },
@@ -124,6 +131,7 @@ static const struct vn_info_extension _vn_info_extensions[187] = {
    { "VK_KHR_compute_shader_derivatives", 512, 1 },
    { "VK_KHR_cooperative_matrix", 507, 2 },
    { "VK_KHR_copy_commands2", 338, 1 },
+   { "VK_KHR_copy_memory_indirect", 550, 1 },
    { "VK_KHR_create_renderpass2", 110, 1 },
    { "VK_KHR_dedicated_allocation", 128, 3 },
    { "VK_KHR_deferred_host_operations", 269, 4 },
@@ -157,12 +165,16 @@ static const struct vn_info_extension _vn_info_extensions[187] = {
    { "VK_KHR_line_rasterization", 535, 1 },
    { "VK_KHR_load_store_op_none", 527, 1 },
    { "VK_KHR_maintenance1", 70, 2 },
+   { "VK_KHR_maintenance10", 631, 1 },
+   { "VK_KHR_maintenance11", 658, 1 },
    { "VK_KHR_maintenance2", 118, 1 },
    { "VK_KHR_maintenance3", 169, 1 },
    { "VK_KHR_maintenance4", 414, 2 },
    { "VK_KHR_maintenance5", 471, 1 },
    { "VK_KHR_maintenance6", 546, 1 },
    { "VK_KHR_maintenance7", 563, 1 },
+   { "VK_KHR_maintenance8", 575, 1 },
+   { "VK_KHR_maintenance9", 585, 1 },
    { "VK_KHR_map_memory2", 272, 1 },
    { "VK_KHR_multiview", 54, 1 },
    { "VK_KHR_pipeline_library", 291, 1 },
@@ -179,6 +191,7 @@ static const struct vn_info_extension _vn_info_extensions[187] = {
    { "VK_KHR_shader_atomic_int64", 181, 1 },
    { "VK_KHR_shader_bfloat16", 142, 1 },
    { "VK_KHR_shader_clock", 182, 1 },
+   { "VK_KHR_shader_constant_data", 232, 1 },
    { "VK_KHR_shader_draw_parameters", 64, 1 },
    { "VK_KHR_shader_expect_assume", 545, 1 },
    { "VK_KHR_shader_float16_int8", 83, 1 },
@@ -199,6 +212,7 @@ static const struct vn_info_extension _vn_info_extensions[187] = {
    { "VK_KHR_storage_buffer_storage_class", 132, 1 },
    { "VK_KHR_synchronization2", 315, 1 },
    { "VK_KHR_timeline_semaphore", 208, 2 },
+   { "VK_KHR_unified_image_layouts", 528, 1 },
    { "VK_KHR_uniform_buffer_standard_layout", 254, 1 },
    { "VK_KHR_variable_pointers", 121, 1 },
    { "VK_KHR_vertex_attribute_divisor", 526, 1 },
@@ -207,6 +221,7 @@ static const struct vn_info_extension _vn_info_extensions[187] = {
    { "VK_KHR_zero_initialize_workgroup_memory", 326, 1 },
    { "VK_MESA_venus_protocol", 385, 4 },
    { "VK_NV_compute_shader_derivatives", 202, 1 },
+   { "VK_NV_framebuffer_mixed_samples", 153, 1 },
    { "VK_VALVE_mutable_descriptor_type", 352, 1 },
 };
 
@@ -219,7 +234,7 @@ vn_info_wire_format_version(void)
 static inline uint32_t
 vn_info_vk_xml_version(void)
 {
-    return VK_MAKE_API_VERSION(0, 1, 4, 343);
+    return VK_MAKE_API_VERSION(0, 1, 4, 357);
 }
 
 static inline int

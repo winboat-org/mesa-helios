@@ -148,7 +148,7 @@ vn_sizeof_VkTexelBufferDescriptorInfoEXT_self(const VkTexelBufferDescriptorInfoE
     size_t size = 0;
     /* skip val->{sType,pNext} */
     size += vn_sizeof_VkFormat(&val->format);
-    size += vn_sizeof_VkDeviceAddressRangeEXT(&val->addressRange);
+    size += vn_sizeof_VkDeviceAddressRangeKHR(&val->addressRange);
     return size;
 }
 
@@ -176,7 +176,7 @@ vn_encode_VkTexelBufferDescriptorInfoEXT_self(struct vn_cs_encoder *enc, const V
 {
     /* skip val->{sType,pNext} */
     vn_encode_VkFormat(enc, &val->format);
-    vn_encode_VkDeviceAddressRangeEXT(enc, &val->addressRange);
+    vn_encode_VkDeviceAddressRangeKHR(enc, &val->addressRange);
 }
 
 static inline void
@@ -290,17 +290,17 @@ vn_sizeof_VkResourceDescriptorDataEXT(const VkResourceDescriptorDataEXT *val, Vk
     case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
         size += vn_sizeof_simple_pointer(val->pAddressRange);
         if (val->pAddressRange)
-            size += vn_sizeof_VkDeviceAddressRangeEXT(val->pAddressRange);
+            size += vn_sizeof_VkDeviceAddressRangeKHR(val->pAddressRange);
         break;
     case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
         size += vn_sizeof_simple_pointer(val->pAddressRange);
         if (val->pAddressRange)
-            size += vn_sizeof_VkDeviceAddressRangeEXT(val->pAddressRange);
+            size += vn_sizeof_VkDeviceAddressRangeKHR(val->pAddressRange);
         break;
     case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
         size += vn_sizeof_simple_pointer(val->pAddressRange);
         if (val->pAddressRange)
-            size += vn_sizeof_VkDeviceAddressRangeEXT(val->pAddressRange);
+            size += vn_sizeof_VkDeviceAddressRangeKHR(val->pAddressRange);
         break;
     case VK_DESCRIPTOR_TYPE_TENSOR_ARM:
         size += vn_sizeof_simple_pointer(val->pTensorARM);
@@ -349,15 +349,15 @@ vn_encode_VkResourceDescriptorDataEXT(struct vn_cs_encoder *enc, const VkResourc
         break;
     case VK_DESCRIPTOR_TYPE_ACCELERATION_STRUCTURE_KHR:
         if (vn_encode_simple_pointer(enc, val->pAddressRange))
-            vn_encode_VkDeviceAddressRangeEXT(enc, val->pAddressRange);
+            vn_encode_VkDeviceAddressRangeKHR(enc, val->pAddressRange);
         break;
     case VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER:
         if (vn_encode_simple_pointer(enc, val->pAddressRange))
-            vn_encode_VkDeviceAddressRangeEXT(enc, val->pAddressRange);
+            vn_encode_VkDeviceAddressRangeKHR(enc, val->pAddressRange);
         break;
     case VK_DESCRIPTOR_TYPE_STORAGE_BUFFER:
         if (vn_encode_simple_pointer(enc, val->pAddressRange))
-            vn_encode_VkDeviceAddressRangeEXT(enc, val->pAddressRange);
+            vn_encode_VkDeviceAddressRangeKHR(enc, val->pAddressRange);
         break;
     case VK_DESCRIPTOR_TYPE_TENSOR_ARM:
         if (vn_encode_simple_pointer(enc, val->pTensorARM))

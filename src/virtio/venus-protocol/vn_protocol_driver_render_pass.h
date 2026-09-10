@@ -357,28 +357,28 @@ vn_encode_VkRenderPassInputAttachmentAspectCreateInfo(struct vn_cs_encoder *enc,
 static inline size_t
 vn_sizeof_VkRenderPassCreateInfo_pnext(const void *val)
 {
-    const VkBaseInStructure *pnext = val;
+    const void *pnext = val;
     size_t size = 0;
 
     while (pnext) {
-        switch ((int32_t)pnext->sType) {
+        switch ((int32_t)(*(const VkStructureType *)pnext)) {
         case VK_STRUCTURE_TYPE_RENDER_PASS_MULTIVIEW_CREATE_INFO:
             size += vn_sizeof_simple_pointer(pnext);
-            size += vn_sizeof_VkStructureType(&pnext->sType);
+            size += vn_sizeof_VkStructureType(pnext);
             size += vn_sizeof_VkRenderPassCreateInfo_pnext(((const VkRenderPassMultiviewCreateInfo *)pnext)->pNext);
-            size += vn_sizeof_VkRenderPassMultiviewCreateInfo_self((const VkRenderPassMultiviewCreateInfo *)pnext);
+            size += vn_sizeof_VkRenderPassMultiviewCreateInfo_self(pnext);
             return size;
         case VK_STRUCTURE_TYPE_RENDER_PASS_INPUT_ATTACHMENT_ASPECT_CREATE_INFO:
             size += vn_sizeof_simple_pointer(pnext);
-            size += vn_sizeof_VkStructureType(&pnext->sType);
+            size += vn_sizeof_VkStructureType(pnext);
             size += vn_sizeof_VkRenderPassCreateInfo_pnext(((const VkRenderPassInputAttachmentAspectCreateInfo *)pnext)->pNext);
-            size += vn_sizeof_VkRenderPassInputAttachmentAspectCreateInfo_self((const VkRenderPassInputAttachmentAspectCreateInfo *)pnext);
+            size += vn_sizeof_VkRenderPassInputAttachmentAspectCreateInfo_self(pnext);
             return size;
         default:
             /* ignore unknown/unsupported struct */
             break;
         }
-        pnext = pnext->pNext;
+        memcpy(&pnext, (const char *)pnext + offsetof(VkBaseInStructure, pNext), sizeof(pnext));
     }
 
     return vn_sizeof_simple_pointer(NULL);
@@ -432,27 +432,27 @@ vn_sizeof_VkRenderPassCreateInfo(const VkRenderPassCreateInfo *val)
 static inline void
 vn_encode_VkRenderPassCreateInfo_pnext(struct vn_cs_encoder *enc, const void *val)
 {
-    const VkBaseInStructure *pnext = val;
+    const void *pnext = val;
 
     while (pnext) {
-        switch ((int32_t)pnext->sType) {
+        switch ((int32_t)(*(const VkStructureType *)pnext)) {
         case VK_STRUCTURE_TYPE_RENDER_PASS_MULTIVIEW_CREATE_INFO:
             vn_encode_simple_pointer(enc, pnext);
-            vn_encode_VkStructureType(enc, &pnext->sType);
+            vn_encode_VkStructureType(enc, pnext);
             vn_encode_VkRenderPassCreateInfo_pnext(enc, ((const VkRenderPassMultiviewCreateInfo *)pnext)->pNext);
-            vn_encode_VkRenderPassMultiviewCreateInfo_self(enc, (const VkRenderPassMultiviewCreateInfo *)pnext);
+            vn_encode_VkRenderPassMultiviewCreateInfo_self(enc, pnext);
             return;
         case VK_STRUCTURE_TYPE_RENDER_PASS_INPUT_ATTACHMENT_ASPECT_CREATE_INFO:
             vn_encode_simple_pointer(enc, pnext);
-            vn_encode_VkStructureType(enc, &pnext->sType);
+            vn_encode_VkStructureType(enc, pnext);
             vn_encode_VkRenderPassCreateInfo_pnext(enc, ((const VkRenderPassInputAttachmentAspectCreateInfo *)pnext)->pNext);
-            vn_encode_VkRenderPassInputAttachmentAspectCreateInfo_self(enc, (const VkRenderPassInputAttachmentAspectCreateInfo *)pnext);
+            vn_encode_VkRenderPassInputAttachmentAspectCreateInfo_self(enc, pnext);
             return;
         default:
             /* ignore unknown/unsupported struct */
             break;
         }
-        pnext = pnext->pNext;
+        memcpy(&pnext, (const char *)pnext + offsetof(VkBaseInStructure, pNext), sizeof(pnext));
     }
 
     vn_encode_simple_pointer(enc, NULL);
@@ -629,22 +629,22 @@ vn_encode_VkAttachmentDescriptionStencilLayout(struct vn_cs_encoder *enc, const 
 static inline size_t
 vn_sizeof_VkAttachmentDescription2_pnext(const void *val)
 {
-    const VkBaseInStructure *pnext = val;
+    const void *pnext = val;
     size_t size = 0;
 
     while (pnext) {
-        switch ((int32_t)pnext->sType) {
+        switch ((int32_t)(*(const VkStructureType *)pnext)) {
         case VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_STENCIL_LAYOUT:
             size += vn_sizeof_simple_pointer(pnext);
-            size += vn_sizeof_VkStructureType(&pnext->sType);
+            size += vn_sizeof_VkStructureType(pnext);
             size += vn_sizeof_VkAttachmentDescription2_pnext(((const VkAttachmentDescriptionStencilLayout *)pnext)->pNext);
-            size += vn_sizeof_VkAttachmentDescriptionStencilLayout_self((const VkAttachmentDescriptionStencilLayout *)pnext);
+            size += vn_sizeof_VkAttachmentDescriptionStencilLayout_self(pnext);
             return size;
         default:
             /* ignore unknown/unsupported struct */
             break;
         }
-        pnext = pnext->pNext;
+        memcpy(&pnext, (const char *)pnext + offsetof(VkBaseInStructure, pNext), sizeof(pnext));
     }
 
     return vn_sizeof_simple_pointer(NULL);
@@ -682,21 +682,21 @@ vn_sizeof_VkAttachmentDescription2(const VkAttachmentDescription2 *val)
 static inline void
 vn_encode_VkAttachmentDescription2_pnext(struct vn_cs_encoder *enc, const void *val)
 {
-    const VkBaseInStructure *pnext = val;
+    const void *pnext = val;
 
     while (pnext) {
-        switch ((int32_t)pnext->sType) {
+        switch ((int32_t)(*(const VkStructureType *)pnext)) {
         case VK_STRUCTURE_TYPE_ATTACHMENT_DESCRIPTION_STENCIL_LAYOUT:
             vn_encode_simple_pointer(enc, pnext);
-            vn_encode_VkStructureType(enc, &pnext->sType);
+            vn_encode_VkStructureType(enc, pnext);
             vn_encode_VkAttachmentDescription2_pnext(enc, ((const VkAttachmentDescriptionStencilLayout *)pnext)->pNext);
-            vn_encode_VkAttachmentDescriptionStencilLayout_self(enc, (const VkAttachmentDescriptionStencilLayout *)pnext);
+            vn_encode_VkAttachmentDescriptionStencilLayout_self(enc, pnext);
             return;
         default:
             /* ignore unknown/unsupported struct */
             break;
         }
-        pnext = pnext->pNext;
+        memcpy(&pnext, (const char *)pnext + offsetof(VkBaseInStructure, pNext), sizeof(pnext));
     }
 
     vn_encode_simple_pointer(enc, NULL);
@@ -784,22 +784,22 @@ vn_encode_VkAttachmentReferenceStencilLayout(struct vn_cs_encoder *enc, const Vk
 static inline size_t
 vn_sizeof_VkAttachmentReference2_pnext(const void *val)
 {
-    const VkBaseInStructure *pnext = val;
+    const void *pnext = val;
     size_t size = 0;
 
     while (pnext) {
-        switch ((int32_t)pnext->sType) {
+        switch ((int32_t)(*(const VkStructureType *)pnext)) {
         case VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_STENCIL_LAYOUT:
             size += vn_sizeof_simple_pointer(pnext);
-            size += vn_sizeof_VkStructureType(&pnext->sType);
+            size += vn_sizeof_VkStructureType(pnext);
             size += vn_sizeof_VkAttachmentReference2_pnext(((const VkAttachmentReferenceStencilLayout *)pnext)->pNext);
-            size += vn_sizeof_VkAttachmentReferenceStencilLayout_self((const VkAttachmentReferenceStencilLayout *)pnext);
+            size += vn_sizeof_VkAttachmentReferenceStencilLayout_self(pnext);
             return size;
         default:
             /* ignore unknown/unsupported struct */
             break;
         }
-        pnext = pnext->pNext;
+        memcpy(&pnext, (const char *)pnext + offsetof(VkBaseInStructure, pNext), sizeof(pnext));
     }
 
     return vn_sizeof_simple_pointer(NULL);
@@ -831,21 +831,21 @@ vn_sizeof_VkAttachmentReference2(const VkAttachmentReference2 *val)
 static inline void
 vn_encode_VkAttachmentReference2_pnext(struct vn_cs_encoder *enc, const void *val)
 {
-    const VkBaseInStructure *pnext = val;
+    const void *pnext = val;
 
     while (pnext) {
-        switch ((int32_t)pnext->sType) {
+        switch ((int32_t)(*(const VkStructureType *)pnext)) {
         case VK_STRUCTURE_TYPE_ATTACHMENT_REFERENCE_STENCIL_LAYOUT:
             vn_encode_simple_pointer(enc, pnext);
-            vn_encode_VkStructureType(enc, &pnext->sType);
+            vn_encode_VkStructureType(enc, pnext);
             vn_encode_VkAttachmentReference2_pnext(enc, ((const VkAttachmentReferenceStencilLayout *)pnext)->pNext);
-            vn_encode_VkAttachmentReferenceStencilLayout_self(enc, (const VkAttachmentReferenceStencilLayout *)pnext);
+            vn_encode_VkAttachmentReferenceStencilLayout_self(enc, pnext);
             return;
         default:
             /* ignore unknown/unsupported struct */
             break;
         }
-        pnext = pnext->pNext;
+        memcpy(&pnext, (const char *)pnext + offsetof(VkBaseInStructure, pNext), sizeof(pnext));
     }
 
     vn_encode_simple_pointer(enc, NULL);
@@ -992,38 +992,38 @@ vn_encode_VkFragmentShadingRateAttachmentInfoKHR(struct vn_cs_encoder *enc, cons
 static inline size_t
 vn_sizeof_VkSubpassDescription2_pnext(const void *val)
 {
-    const VkBaseInStructure *pnext = val;
+    const void *pnext = val;
     size_t size = 0;
 
     while (pnext) {
-        switch ((int32_t)pnext->sType) {
+        switch ((int32_t)(*(const VkStructureType *)pnext)) {
         case VK_STRUCTURE_TYPE_SUBPASS_DESCRIPTION_DEPTH_STENCIL_RESOLVE:
             size += vn_sizeof_simple_pointer(pnext);
-            size += vn_sizeof_VkStructureType(&pnext->sType);
+            size += vn_sizeof_VkStructureType(pnext);
             size += vn_sizeof_VkSubpassDescription2_pnext(((const VkSubpassDescriptionDepthStencilResolve *)pnext)->pNext);
-            size += vn_sizeof_VkSubpassDescriptionDepthStencilResolve_self((const VkSubpassDescriptionDepthStencilResolve *)pnext);
+            size += vn_sizeof_VkSubpassDescriptionDepthStencilResolve_self(pnext);
             return size;
         case VK_STRUCTURE_TYPE_FRAGMENT_SHADING_RATE_ATTACHMENT_INFO_KHR:
             if (!vn_cs_renderer_protocol_has_extension(227 /* VK_KHR_fragment_shading_rate */))
                 break;
             size += vn_sizeof_simple_pointer(pnext);
-            size += vn_sizeof_VkStructureType(&pnext->sType);
+            size += vn_sizeof_VkStructureType(pnext);
             size += vn_sizeof_VkSubpassDescription2_pnext(((const VkFragmentShadingRateAttachmentInfoKHR *)pnext)->pNext);
-            size += vn_sizeof_VkFragmentShadingRateAttachmentInfoKHR_self((const VkFragmentShadingRateAttachmentInfoKHR *)pnext);
+            size += vn_sizeof_VkFragmentShadingRateAttachmentInfoKHR_self(pnext);
             return size;
         case VK_STRUCTURE_TYPE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_INFO_EXT:
             if (!vn_cs_renderer_protocol_has_extension(377 /* VK_EXT_multisampled_render_to_single_sampled */))
                 break;
             size += vn_sizeof_simple_pointer(pnext);
-            size += vn_sizeof_VkStructureType(&pnext->sType);
+            size += vn_sizeof_VkStructureType(pnext);
             size += vn_sizeof_VkSubpassDescription2_pnext(((const VkMultisampledRenderToSingleSampledInfoEXT *)pnext)->pNext);
-            size += vn_sizeof_VkMultisampledRenderToSingleSampledInfoEXT_self((const VkMultisampledRenderToSingleSampledInfoEXT *)pnext);
+            size += vn_sizeof_VkMultisampledRenderToSingleSampledInfoEXT_self(pnext);
             return size;
         default:
             /* ignore unknown/unsupported struct */
             break;
         }
-        pnext = pnext->pNext;
+        memcpy(&pnext, (const char *)pnext + offsetof(VkBaseInStructure, pNext), sizeof(pnext));
     }
 
     return vn_sizeof_simple_pointer(NULL);
@@ -1088,37 +1088,37 @@ vn_sizeof_VkSubpassDescription2(const VkSubpassDescription2 *val)
 static inline void
 vn_encode_VkSubpassDescription2_pnext(struct vn_cs_encoder *enc, const void *val)
 {
-    const VkBaseInStructure *pnext = val;
+    const void *pnext = val;
 
     while (pnext) {
-        switch ((int32_t)pnext->sType) {
+        switch ((int32_t)(*(const VkStructureType *)pnext)) {
         case VK_STRUCTURE_TYPE_SUBPASS_DESCRIPTION_DEPTH_STENCIL_RESOLVE:
             vn_encode_simple_pointer(enc, pnext);
-            vn_encode_VkStructureType(enc, &pnext->sType);
+            vn_encode_VkStructureType(enc, pnext);
             vn_encode_VkSubpassDescription2_pnext(enc, ((const VkSubpassDescriptionDepthStencilResolve *)pnext)->pNext);
-            vn_encode_VkSubpassDescriptionDepthStencilResolve_self(enc, (const VkSubpassDescriptionDepthStencilResolve *)pnext);
+            vn_encode_VkSubpassDescriptionDepthStencilResolve_self(enc, pnext);
             return;
         case VK_STRUCTURE_TYPE_FRAGMENT_SHADING_RATE_ATTACHMENT_INFO_KHR:
             if (!vn_cs_renderer_protocol_has_extension(227 /* VK_KHR_fragment_shading_rate */))
                 break;
             vn_encode_simple_pointer(enc, pnext);
-            vn_encode_VkStructureType(enc, &pnext->sType);
+            vn_encode_VkStructureType(enc, pnext);
             vn_encode_VkSubpassDescription2_pnext(enc, ((const VkFragmentShadingRateAttachmentInfoKHR *)pnext)->pNext);
-            vn_encode_VkFragmentShadingRateAttachmentInfoKHR_self(enc, (const VkFragmentShadingRateAttachmentInfoKHR *)pnext);
+            vn_encode_VkFragmentShadingRateAttachmentInfoKHR_self(enc, pnext);
             return;
         case VK_STRUCTURE_TYPE_MULTISAMPLED_RENDER_TO_SINGLE_SAMPLED_INFO_EXT:
             if (!vn_cs_renderer_protocol_has_extension(377 /* VK_EXT_multisampled_render_to_single_sampled */))
                 break;
             vn_encode_simple_pointer(enc, pnext);
-            vn_encode_VkStructureType(enc, &pnext->sType);
+            vn_encode_VkStructureType(enc, pnext);
             vn_encode_VkSubpassDescription2_pnext(enc, ((const VkMultisampledRenderToSingleSampledInfoEXT *)pnext)->pNext);
-            vn_encode_VkMultisampledRenderToSingleSampledInfoEXT_self(enc, (const VkMultisampledRenderToSingleSampledInfoEXT *)pnext);
+            vn_encode_VkMultisampledRenderToSingleSampledInfoEXT_self(enc, pnext);
             return;
         default:
             /* ignore unknown/unsupported struct */
             break;
         }
-        pnext = pnext->pNext;
+        memcpy(&pnext, (const char *)pnext + offsetof(VkBaseInStructure, pNext), sizeof(pnext));
     }
 
     vn_encode_simple_pointer(enc, NULL);
@@ -1179,24 +1179,32 @@ vn_encode_VkSubpassDescription2(struct vn_cs_encoder *enc, const VkSubpassDescri
 static inline size_t
 vn_sizeof_VkSubpassDependency2_pnext(const void *val)
 {
-    const VkBaseInStructure *pnext = val;
+    const void *pnext = val;
     size_t size = 0;
 
     while (pnext) {
-        switch ((int32_t)pnext->sType) {
+        switch ((int32_t)(*(const VkStructureType *)pnext)) {
         case VK_STRUCTURE_TYPE_MEMORY_BARRIER_2:
             if (!vn_cs_renderer_protocol_has_extension(315 /* VK_KHR_synchronization2 */))
                 break;
             size += vn_sizeof_simple_pointer(pnext);
-            size += vn_sizeof_VkStructureType(&pnext->sType);
+            size += vn_sizeof_VkStructureType(pnext);
             size += vn_sizeof_VkSubpassDependency2_pnext(((const VkMemoryBarrier2 *)pnext)->pNext);
-            size += vn_sizeof_VkMemoryBarrier2_self((const VkMemoryBarrier2 *)pnext);
+            size += vn_sizeof_VkMemoryBarrier2_self(pnext);
+            return size;
+        case VK_STRUCTURE_TYPE_MEMORY_BARRIER_ACCESS_FLAGS_3_KHR:
+            if (!vn_cs_renderer_protocol_has_extension(575 /* VK_KHR_maintenance8 */))
+                break;
+            size += vn_sizeof_simple_pointer(pnext);
+            size += vn_sizeof_VkStructureType(pnext);
+            size += vn_sizeof_VkSubpassDependency2_pnext(((const VkMemoryBarrierAccessFlags3KHR *)pnext)->pNext);
+            size += vn_sizeof_VkMemoryBarrierAccessFlags3KHR_self(pnext);
             return size;
         default:
             /* ignore unknown/unsupported struct */
             break;
         }
-        pnext = pnext->pNext;
+        memcpy(&pnext, (const char *)pnext + offsetof(VkBaseInStructure, pNext), sizeof(pnext));
     }
 
     return vn_sizeof_simple_pointer(NULL);
@@ -1233,23 +1241,31 @@ vn_sizeof_VkSubpassDependency2(const VkSubpassDependency2 *val)
 static inline void
 vn_encode_VkSubpassDependency2_pnext(struct vn_cs_encoder *enc, const void *val)
 {
-    const VkBaseInStructure *pnext = val;
+    const void *pnext = val;
 
     while (pnext) {
-        switch ((int32_t)pnext->sType) {
+        switch ((int32_t)(*(const VkStructureType *)pnext)) {
         case VK_STRUCTURE_TYPE_MEMORY_BARRIER_2:
             if (!vn_cs_renderer_protocol_has_extension(315 /* VK_KHR_synchronization2 */))
                 break;
             vn_encode_simple_pointer(enc, pnext);
-            vn_encode_VkStructureType(enc, &pnext->sType);
+            vn_encode_VkStructureType(enc, pnext);
             vn_encode_VkSubpassDependency2_pnext(enc, ((const VkMemoryBarrier2 *)pnext)->pNext);
-            vn_encode_VkMemoryBarrier2_self(enc, (const VkMemoryBarrier2 *)pnext);
+            vn_encode_VkMemoryBarrier2_self(enc, pnext);
+            return;
+        case VK_STRUCTURE_TYPE_MEMORY_BARRIER_ACCESS_FLAGS_3_KHR:
+            if (!vn_cs_renderer_protocol_has_extension(575 /* VK_KHR_maintenance8 */))
+                break;
+            vn_encode_simple_pointer(enc, pnext);
+            vn_encode_VkStructureType(enc, pnext);
+            vn_encode_VkSubpassDependency2_pnext(enc, ((const VkMemoryBarrierAccessFlags3KHR *)pnext)->pNext);
+            vn_encode_VkMemoryBarrierAccessFlags3KHR_self(enc, pnext);
             return;
         default:
             /* ignore unknown/unsupported struct */
             break;
         }
-        pnext = pnext->pNext;
+        memcpy(&pnext, (const char *)pnext + offsetof(VkBaseInStructure, pNext), sizeof(pnext));
     }
 
     vn_encode_simple_pointer(enc, NULL);

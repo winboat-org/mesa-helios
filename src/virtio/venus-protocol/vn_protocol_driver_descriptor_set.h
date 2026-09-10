@@ -87,22 +87,22 @@ vn_encode_VkDescriptorSetVariableDescriptorCountAllocateInfo(struct vn_cs_encode
 static inline size_t
 vn_sizeof_VkDescriptorSetAllocateInfo_pnext(const void *val)
 {
-    const VkBaseInStructure *pnext = val;
+    const void *pnext = val;
     size_t size = 0;
 
     while (pnext) {
-        switch ((int32_t)pnext->sType) {
+        switch ((int32_t)(*(const VkStructureType *)pnext)) {
         case VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO:
             size += vn_sizeof_simple_pointer(pnext);
-            size += vn_sizeof_VkStructureType(&pnext->sType);
+            size += vn_sizeof_VkStructureType(pnext);
             size += vn_sizeof_VkDescriptorSetAllocateInfo_pnext(((const VkDescriptorSetVariableDescriptorCountAllocateInfo *)pnext)->pNext);
-            size += vn_sizeof_VkDescriptorSetVariableDescriptorCountAllocateInfo_self((const VkDescriptorSetVariableDescriptorCountAllocateInfo *)pnext);
+            size += vn_sizeof_VkDescriptorSetVariableDescriptorCountAllocateInfo_self(pnext);
             return size;
         default:
             /* ignore unknown/unsupported struct */
             break;
         }
-        pnext = pnext->pNext;
+        memcpy(&pnext, (const char *)pnext + offsetof(VkBaseInStructure, pNext), sizeof(pnext));
     }
 
     return vn_sizeof_simple_pointer(NULL);
@@ -140,21 +140,21 @@ vn_sizeof_VkDescriptorSetAllocateInfo(const VkDescriptorSetAllocateInfo *val)
 static inline void
 vn_encode_VkDescriptorSetAllocateInfo_pnext(struct vn_cs_encoder *enc, const void *val)
 {
-    const VkBaseInStructure *pnext = val;
+    const void *pnext = val;
 
     while (pnext) {
-        switch ((int32_t)pnext->sType) {
+        switch ((int32_t)(*(const VkStructureType *)pnext)) {
         case VK_STRUCTURE_TYPE_DESCRIPTOR_SET_VARIABLE_DESCRIPTOR_COUNT_ALLOCATE_INFO:
             vn_encode_simple_pointer(enc, pnext);
-            vn_encode_VkStructureType(enc, &pnext->sType);
+            vn_encode_VkStructureType(enc, pnext);
             vn_encode_VkDescriptorSetAllocateInfo_pnext(enc, ((const VkDescriptorSetVariableDescriptorCountAllocateInfo *)pnext)->pNext);
-            vn_encode_VkDescriptorSetVariableDescriptorCountAllocateInfo_self(enc, (const VkDescriptorSetVariableDescriptorCountAllocateInfo *)pnext);
+            vn_encode_VkDescriptorSetVariableDescriptorCountAllocateInfo_self(enc, pnext);
             return;
         default:
             /* ignore unknown/unsupported struct */
             break;
         }
-        pnext = pnext->pNext;
+        memcpy(&pnext, (const char *)pnext + offsetof(VkBaseInStructure, pNext), sizeof(pnext));
     }
 
     vn_encode_simple_pointer(enc, NULL);

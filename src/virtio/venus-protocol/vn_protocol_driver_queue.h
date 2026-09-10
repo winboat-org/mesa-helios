@@ -104,59 +104,6 @@ vn_encode_VkDeviceGroupSubmitInfo(struct vn_cs_encoder *enc, const VkDeviceGroup
     vn_encode_VkDeviceGroupSubmitInfo_self(enc, val);
 }
 
-/* struct VkProtectedSubmitInfo chain */
-
-static inline size_t
-vn_sizeof_VkProtectedSubmitInfo_pnext(const void *val)
-{
-    /* no known/supported struct */
-    return vn_sizeof_simple_pointer(NULL);
-}
-
-static inline size_t
-vn_sizeof_VkProtectedSubmitInfo_self(const VkProtectedSubmitInfo *val)
-{
-    size_t size = 0;
-    /* skip val->{sType,pNext} */
-    size += vn_sizeof_VkBool32(&val->protectedSubmit);
-    return size;
-}
-
-static inline size_t
-vn_sizeof_VkProtectedSubmitInfo(const VkProtectedSubmitInfo *val)
-{
-    size_t size = 0;
-
-    size += vn_sizeof_VkStructureType(&val->sType);
-    size += vn_sizeof_VkProtectedSubmitInfo_pnext(val->pNext);
-    size += vn_sizeof_VkProtectedSubmitInfo_self(val);
-
-    return size;
-}
-
-static inline void
-vn_encode_VkProtectedSubmitInfo_pnext(struct vn_cs_encoder *enc, const void *val)
-{
-    /* no known/supported struct */
-    vn_encode_simple_pointer(enc, NULL);
-}
-
-static inline void
-vn_encode_VkProtectedSubmitInfo_self(struct vn_cs_encoder *enc, const VkProtectedSubmitInfo *val)
-{
-    /* skip val->{sType,pNext} */
-    vn_encode_VkBool32(enc, &val->protectedSubmit);
-}
-
-static inline void
-vn_encode_VkProtectedSubmitInfo(struct vn_cs_encoder *enc, const VkProtectedSubmitInfo *val)
-{
-    assert(val->sType == VK_STRUCTURE_TYPE_PROTECTED_SUBMIT_INFO);
-    vn_encode_VkStructureType(enc, &(VkStructureType){ VK_STRUCTURE_TYPE_PROTECTED_SUBMIT_INFO });
-    vn_encode_VkProtectedSubmitInfo_pnext(enc, val->pNext);
-    vn_encode_VkProtectedSubmitInfo_self(enc, val);
-}
-
 /* struct VkTimelineSemaphoreSubmitInfo chain */
 
 static inline size_t
@@ -236,39 +183,92 @@ vn_encode_VkTimelineSemaphoreSubmitInfo(struct vn_cs_encoder *enc, const VkTimel
     vn_encode_VkTimelineSemaphoreSubmitInfo_self(enc, val);
 }
 
+/* struct VkProtectedSubmitInfo chain */
+
+static inline size_t
+vn_sizeof_VkProtectedSubmitInfo_pnext(const void *val)
+{
+    /* no known/supported struct */
+    return vn_sizeof_simple_pointer(NULL);
+}
+
+static inline size_t
+vn_sizeof_VkProtectedSubmitInfo_self(const VkProtectedSubmitInfo *val)
+{
+    size_t size = 0;
+    /* skip val->{sType,pNext} */
+    size += vn_sizeof_VkBool32(&val->protectedSubmit);
+    return size;
+}
+
+static inline size_t
+vn_sizeof_VkProtectedSubmitInfo(const VkProtectedSubmitInfo *val)
+{
+    size_t size = 0;
+
+    size += vn_sizeof_VkStructureType(&val->sType);
+    size += vn_sizeof_VkProtectedSubmitInfo_pnext(val->pNext);
+    size += vn_sizeof_VkProtectedSubmitInfo_self(val);
+
+    return size;
+}
+
+static inline void
+vn_encode_VkProtectedSubmitInfo_pnext(struct vn_cs_encoder *enc, const void *val)
+{
+    /* no known/supported struct */
+    vn_encode_simple_pointer(enc, NULL);
+}
+
+static inline void
+vn_encode_VkProtectedSubmitInfo_self(struct vn_cs_encoder *enc, const VkProtectedSubmitInfo *val)
+{
+    /* skip val->{sType,pNext} */
+    vn_encode_VkBool32(enc, &val->protectedSubmit);
+}
+
+static inline void
+vn_encode_VkProtectedSubmitInfo(struct vn_cs_encoder *enc, const VkProtectedSubmitInfo *val)
+{
+    assert(val->sType == VK_STRUCTURE_TYPE_PROTECTED_SUBMIT_INFO);
+    vn_encode_VkStructureType(enc, &(VkStructureType){ VK_STRUCTURE_TYPE_PROTECTED_SUBMIT_INFO });
+    vn_encode_VkProtectedSubmitInfo_pnext(enc, val->pNext);
+    vn_encode_VkProtectedSubmitInfo_self(enc, val);
+}
+
 /* struct VkSubmitInfo chain */
 
 static inline size_t
 vn_sizeof_VkSubmitInfo_pnext(const void *val)
 {
-    const VkBaseInStructure *pnext = val;
+    const void *pnext = val;
     size_t size = 0;
 
     while (pnext) {
-        switch ((int32_t)pnext->sType) {
+        switch ((int32_t)(*(const VkStructureType *)pnext)) {
         case VK_STRUCTURE_TYPE_DEVICE_GROUP_SUBMIT_INFO:
             size += vn_sizeof_simple_pointer(pnext);
-            size += vn_sizeof_VkStructureType(&pnext->sType);
+            size += vn_sizeof_VkStructureType(pnext);
             size += vn_sizeof_VkSubmitInfo_pnext(((const VkDeviceGroupSubmitInfo *)pnext)->pNext);
-            size += vn_sizeof_VkDeviceGroupSubmitInfo_self((const VkDeviceGroupSubmitInfo *)pnext);
-            return size;
-        case VK_STRUCTURE_TYPE_PROTECTED_SUBMIT_INFO:
-            size += vn_sizeof_simple_pointer(pnext);
-            size += vn_sizeof_VkStructureType(&pnext->sType);
-            size += vn_sizeof_VkSubmitInfo_pnext(((const VkProtectedSubmitInfo *)pnext)->pNext);
-            size += vn_sizeof_VkProtectedSubmitInfo_self((const VkProtectedSubmitInfo *)pnext);
+            size += vn_sizeof_VkDeviceGroupSubmitInfo_self(pnext);
             return size;
         case VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO:
             size += vn_sizeof_simple_pointer(pnext);
-            size += vn_sizeof_VkStructureType(&pnext->sType);
+            size += vn_sizeof_VkStructureType(pnext);
             size += vn_sizeof_VkSubmitInfo_pnext(((const VkTimelineSemaphoreSubmitInfo *)pnext)->pNext);
-            size += vn_sizeof_VkTimelineSemaphoreSubmitInfo_self((const VkTimelineSemaphoreSubmitInfo *)pnext);
+            size += vn_sizeof_VkTimelineSemaphoreSubmitInfo_self(pnext);
+            return size;
+        case VK_STRUCTURE_TYPE_PROTECTED_SUBMIT_INFO:
+            size += vn_sizeof_simple_pointer(pnext);
+            size += vn_sizeof_VkStructureType(pnext);
+            size += vn_sizeof_VkSubmitInfo_pnext(((const VkProtectedSubmitInfo *)pnext)->pNext);
+            size += vn_sizeof_VkProtectedSubmitInfo_self(pnext);
             return size;
         default:
             /* ignore unknown/unsupported struct */
             break;
         }
-        pnext = pnext->pNext;
+        memcpy(&pnext, (const char *)pnext + offsetof(VkBaseInStructure, pNext), sizeof(pnext));
     }
 
     return vn_sizeof_simple_pointer(NULL);
@@ -328,33 +328,33 @@ vn_sizeof_VkSubmitInfo(const VkSubmitInfo *val)
 static inline void
 vn_encode_VkSubmitInfo_pnext(struct vn_cs_encoder *enc, const void *val)
 {
-    const VkBaseInStructure *pnext = val;
+    const void *pnext = val;
 
     while (pnext) {
-        switch ((int32_t)pnext->sType) {
+        switch ((int32_t)(*(const VkStructureType *)pnext)) {
         case VK_STRUCTURE_TYPE_DEVICE_GROUP_SUBMIT_INFO:
             vn_encode_simple_pointer(enc, pnext);
-            vn_encode_VkStructureType(enc, &pnext->sType);
+            vn_encode_VkStructureType(enc, pnext);
             vn_encode_VkSubmitInfo_pnext(enc, ((const VkDeviceGroupSubmitInfo *)pnext)->pNext);
-            vn_encode_VkDeviceGroupSubmitInfo_self(enc, (const VkDeviceGroupSubmitInfo *)pnext);
-            return;
-        case VK_STRUCTURE_TYPE_PROTECTED_SUBMIT_INFO:
-            vn_encode_simple_pointer(enc, pnext);
-            vn_encode_VkStructureType(enc, &pnext->sType);
-            vn_encode_VkSubmitInfo_pnext(enc, ((const VkProtectedSubmitInfo *)pnext)->pNext);
-            vn_encode_VkProtectedSubmitInfo_self(enc, (const VkProtectedSubmitInfo *)pnext);
+            vn_encode_VkDeviceGroupSubmitInfo_self(enc, pnext);
             return;
         case VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO:
             vn_encode_simple_pointer(enc, pnext);
-            vn_encode_VkStructureType(enc, &pnext->sType);
+            vn_encode_VkStructureType(enc, pnext);
             vn_encode_VkSubmitInfo_pnext(enc, ((const VkTimelineSemaphoreSubmitInfo *)pnext)->pNext);
-            vn_encode_VkTimelineSemaphoreSubmitInfo_self(enc, (const VkTimelineSemaphoreSubmitInfo *)pnext);
+            vn_encode_VkTimelineSemaphoreSubmitInfo_self(enc, pnext);
+            return;
+        case VK_STRUCTURE_TYPE_PROTECTED_SUBMIT_INFO:
+            vn_encode_simple_pointer(enc, pnext);
+            vn_encode_VkStructureType(enc, pnext);
+            vn_encode_VkSubmitInfo_pnext(enc, ((const VkProtectedSubmitInfo *)pnext)->pNext);
+            vn_encode_VkProtectedSubmitInfo_self(enc, pnext);
             return;
         default:
             /* ignore unknown/unsupported struct */
             break;
         }
-        pnext = pnext->pNext;
+        memcpy(&pnext, (const char *)pnext + offsetof(VkBaseInStructure, pNext), sizeof(pnext));
     }
 
     vn_encode_simple_pointer(enc, NULL);
@@ -612,28 +612,28 @@ vn_encode_VkDeviceGroupBindSparseInfo(struct vn_cs_encoder *enc, const VkDeviceG
 static inline size_t
 vn_sizeof_VkBindSparseInfo_pnext(const void *val)
 {
-    const VkBaseInStructure *pnext = val;
+    const void *pnext = val;
     size_t size = 0;
 
     while (pnext) {
-        switch ((int32_t)pnext->sType) {
+        switch ((int32_t)(*(const VkStructureType *)pnext)) {
         case VK_STRUCTURE_TYPE_DEVICE_GROUP_BIND_SPARSE_INFO:
             size += vn_sizeof_simple_pointer(pnext);
-            size += vn_sizeof_VkStructureType(&pnext->sType);
+            size += vn_sizeof_VkStructureType(pnext);
             size += vn_sizeof_VkBindSparseInfo_pnext(((const VkDeviceGroupBindSparseInfo *)pnext)->pNext);
-            size += vn_sizeof_VkDeviceGroupBindSparseInfo_self((const VkDeviceGroupBindSparseInfo *)pnext);
+            size += vn_sizeof_VkDeviceGroupBindSparseInfo_self(pnext);
             return size;
         case VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO:
             size += vn_sizeof_simple_pointer(pnext);
-            size += vn_sizeof_VkStructureType(&pnext->sType);
+            size += vn_sizeof_VkStructureType(pnext);
             size += vn_sizeof_VkBindSparseInfo_pnext(((const VkTimelineSemaphoreSubmitInfo *)pnext)->pNext);
-            size += vn_sizeof_VkTimelineSemaphoreSubmitInfo_self((const VkTimelineSemaphoreSubmitInfo *)pnext);
+            size += vn_sizeof_VkTimelineSemaphoreSubmitInfo_self(pnext);
             return size;
         default:
             /* ignore unknown/unsupported struct */
             break;
         }
-        pnext = pnext->pNext;
+        memcpy(&pnext, (const char *)pnext + offsetof(VkBaseInStructure, pNext), sizeof(pnext));
     }
 
     return vn_sizeof_simple_pointer(NULL);
@@ -702,27 +702,27 @@ vn_sizeof_VkBindSparseInfo(const VkBindSparseInfo *val)
 static inline void
 vn_encode_VkBindSparseInfo_pnext(struct vn_cs_encoder *enc, const void *val)
 {
-    const VkBaseInStructure *pnext = val;
+    const void *pnext = val;
 
     while (pnext) {
-        switch ((int32_t)pnext->sType) {
+        switch ((int32_t)(*(const VkStructureType *)pnext)) {
         case VK_STRUCTURE_TYPE_DEVICE_GROUP_BIND_SPARSE_INFO:
             vn_encode_simple_pointer(enc, pnext);
-            vn_encode_VkStructureType(enc, &pnext->sType);
+            vn_encode_VkStructureType(enc, pnext);
             vn_encode_VkBindSparseInfo_pnext(enc, ((const VkDeviceGroupBindSparseInfo *)pnext)->pNext);
-            vn_encode_VkDeviceGroupBindSparseInfo_self(enc, (const VkDeviceGroupBindSparseInfo *)pnext);
+            vn_encode_VkDeviceGroupBindSparseInfo_self(enc, pnext);
             return;
         case VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO:
             vn_encode_simple_pointer(enc, pnext);
-            vn_encode_VkStructureType(enc, &pnext->sType);
+            vn_encode_VkStructureType(enc, pnext);
             vn_encode_VkBindSparseInfo_pnext(enc, ((const VkTimelineSemaphoreSubmitInfo *)pnext)->pNext);
-            vn_encode_VkTimelineSemaphoreSubmitInfo_self(enc, (const VkTimelineSemaphoreSubmitInfo *)pnext);
+            vn_encode_VkTimelineSemaphoreSubmitInfo_self(enc, pnext);
             return;
         default:
             /* ignore unknown/unsupported struct */
             break;
         }
-        pnext = pnext->pNext;
+        memcpy(&pnext, (const char *)pnext + offsetof(VkBaseInStructure, pNext), sizeof(pnext));
     }
 
     vn_encode_simple_pointer(enc, NULL);
@@ -1301,22 +1301,14 @@ static inline void vn_submit_vkQueueBindSparse(struct vn_ring *vn_ring, VkComman
     uint8_t local_cmd_data[VN_SUBMIT_LOCAL_CMD_SIZE];
     void *cmd_data = local_cmd_data;
     size_t cmd_size = vn_sizeof_vkQueueBindSparse(queue, bindInfoCount, pBindInfo, fence);
-    /* Helios: DWM/DXVK can hit the sparse-bind path where Venus' generated
-     * sizeof helper undercounts an internally rebuilt pNext chain.  Pointer
-     * backed command encoders cannot grow and abort on overflow, so reserve
-     * slack here while the actual submitted length still comes from enc->cur.
-     */
-    size_t cmd_alloc_size = cmd_size ? cmd_size + 4096 : 0;
-    if (cmd_alloc_size > sizeof(local_cmd_data)) {
-        cmd_data = malloc(cmd_alloc_size);
+    if (cmd_size > sizeof(local_cmd_data)) {
+        cmd_data = malloc(cmd_size);
         if (!cmd_data)
             cmd_size = 0;
-    } else {
-        cmd_alloc_size = sizeof(local_cmd_data);
     }
     const size_t reply_size = cmd_flags & VK_COMMAND_GENERATE_REPLY_BIT_EXT ? vn_sizeof_vkQueueBindSparse_reply(queue, bindInfoCount, pBindInfo, fence) : 0;
 
-    struct vn_cs_encoder *enc = vn_ring_submit_command_init(vn_ring, submit, cmd_data, cmd_alloc_size, reply_size);
+    struct vn_cs_encoder *enc = vn_ring_submit_command_init(vn_ring, submit, cmd_data, cmd_size, reply_size);
     if (cmd_size) {
         vn_encode_vkQueueBindSparse(enc, cmd_flags, queue, bindInfoCount, pBindInfo, fence);
         vn_ring_submit_command(vn_ring, submit);

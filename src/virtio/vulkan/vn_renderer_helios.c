@@ -198,19 +198,6 @@ struct helios_escape_present_stream {
    uint32_t op;
 };
 
-#define HELIOS_ESCAPE_STREAM_FEEDBACK 0x0014
-#define HELIOS_STREAM_FEEDBACK_REJECTED 2
-struct helios_escape_stream_feedback {
-   struct helios_escape_header hdr;
-   uint64_t cookie;
-   uint64_t wire_fence;
-   uint32_t ctx_id;
-   uint32_t value;
-   uint32_t state;
-   uint32_t reserved;
-};
-_Static_assert(sizeof(struct helios_escape_stream_feedback) == 48, "feedback ABI");
-
 struct helios_escape_present_buffer_read {
    struct helios_escape_header hdr;
    uint64_t cookie;
@@ -441,10 +428,6 @@ struct helios_sync {
    D3DKMT_HANDLE wddm_local;
    D3DKMT_HANDLE wddm_global;
    void *wddm_cpu_va;
-   /* Both attach/detach AND each pointer dereference hold dev_mutex. The
-    * sync ref pins this struct, not the owning semaphore's feedback slot.
-    * NULL = use the real wire response; no pointer escapes the lock. */
-   const volatile uint64_t *feedback_counter;
    /* NT handle created by D3DKMTShareObjects with an object NAME (export
     * with VkExportSemaphoreWin32HandleInfoKHR::name). Held open so the name
     * stays resolvable for consumers; closed on final unref. */
@@ -462,12 +445,8 @@ struct helios_retire_entry {
    struct helios_sync *sync;
    uint64_t fence_id;
    /* Nonzero only for the exact GPU-feedback-capable tagged submit. */
-   uint64_t present_cookie;
-   uint32_t ctx_id;
-   uint32_t present_value;
    /* The sync value this entry's signal reaches — the feedback-shadow
     * retire polls the sync's feedback counter against it. */
-   uint64_t val;
    /* QPC at enqueue (== the wire fence's submit, same call path) — the
     * retire thread computes submit→retirement-observed latency from it
     * (WS2 copy-latency decomposition). */
@@ -530,12 +509,6 @@ struct helios_perf_stats {
     * feedback slot; fallback = a slot existed but the poll budget expired
     * or the slot detached mid-poll (wire path served); wire = no slot
     * (non-timeline / gate off / import-only sync). */
-   uint64_t retire_fb_fast;
-   uint64_t retire_fb_fallback;
-   uint64_t retire_fb_wire;
-   uint64_t stream_fb_accepted;
-   uint64_t stream_fb_retired;
-   uint64_t stream_fb_rejected;
    uint64_t shmem_cache_hits;
    uint64_t shmem_creates;
    uint64_t bo_creates;
@@ -1216,37 +1189,6 @@ helios_wddm_sync_wait(struct vn_renderer *renderer,
    CloseHandle(event);
 
    return wr == WAIT_OBJECT_0 ? VK_SUCCESS : VK_TIMEOUT;
-}
-
-/* Feedback-shadow retire gate: HELIOS_RETIRE_FEEDBACK absent or "1" = ON
- * (default), "0" = off. Gates BOTH the feedback-slot allocation for exported
- * timeline semaphores (vn_semaphore_feedback_init) and the retire thread's
- * feedback poll — off restores the pure wire-fence behavior. */
-bool
-vn_renderer_helios_retire_feedback_enabled(void)
-{
-   static int enabled = -1;
-   if (enabled < 0) {
-      char v[8];
-      enabled = GetEnvironmentVariableA("HELIOS_RETIRE_FEEDBACK", v,
-                                        sizeof(v)) && v[0] == '0'
-                   ? 0
-                   : 1;
-   }
-   return enabled == 1;
-}
-
-void
-vn_renderer_helios_sync_set_feedback(struct vn_renderer *renderer,
-                                     struct vn_renderer_sync *sync,
-                                     const volatile uint64_t *counter_va)
-{
-   struct helios *helios = (struct helios *)renderer;
-   struct helios_sync *hsync = (struct helios_sync *)sync;
-
-   mtx_lock(&helios->dev_mutex);
-   hsync->feedback_counter = counter_va;
-   mtx_unlock(&helios->dev_mutex);
 }
 
 /* Opt-in gate for the per-op shmem/submit trace logs (HELIOS_SUBMIT_TRACE):
@@ -2799,34 +2741,6 @@ helios_sync_unref_locked(struct vn_renderer *renderer, struct helios_sync *sync)
    return true;
 }
 
-/* Caller holds dev_mutex. This is a GPU-execution observation, NOT a wire
- * response: no transport object or Present consumer is retired here. */
-static void
-helios_stream_feedback_locked(struct helios *helios,
-                              const struct helios_retire_entry *entry)
-{
-   if (!entry->present_cookie || entry->ctx_id != helios->ctx_id)
-      return;
-   struct helios_escape_stream_feedback req = { 0 };
-   helios_hdr_init(&req.hdr, HELIOS_ESCAPE_STREAM_FEEDBACK, sizeof(req));
-   req.cookie = entry->present_cookie;
-   req.wire_fence = entry->fence_id;
-   req.ctx_id = entry->ctx_id;
-   req.value = entry->present_value;
-   req.state = HELIOS_STREAM_FEEDBACK_REJECTED;
-   const bool ok = helios_escape(helios, &req, sizeof(req));
-   if (helios->perf.enabled) {
-      if (ok && req.state == 0)
-         helios->perf.stream_fb_accepted++;
-      else if (ok && req.state == 1)
-         helios->perf.stream_fb_retired++;
-      else
-         helios->perf.stream_fb_rejected++;
-   }
-   /* Refusal, teardown, and older KMDs leave execution completion on the wire.
-    * The observed Vulkan feedback still legitimately completes this sync. */
-}
-
 static int
 helios_sync_retire_thread(void *arg)
 {
@@ -2850,54 +2764,9 @@ helios_sync_retire_thread(void *arg)
       mtx_unlock(&helios->retire_mutex);
 
       bool complete = false;
-      /* Feedback-shadow fast path (WS2 wire-fence latency workaround): the
-       * exported semaphore's feedback slot is written BY THE GPU with the
-       * signaled value as part of the same submission that signals it, in
-       * host-coherent shmem — observable here sub-ms after completion,
-       * bypassing the wire-fence response leg (measured 10-20 ms through
-       * QEMU's fence delivery; Doom fps ceiling). Poll ladder: yield ~2 ms,
-       * Sleep(0) to ~8 ms, then 1 ms sleeps to a 50 ms budget; on budget
-       * expiry or slot detach (semaphore destroy) fall back to the wire
-       * path below — never trust a stale pointer past one iteration. */
-      int fb_outcome = 0; /* 0 = no slot, 1 = fast, 2 = fallback */
-      if (!p_atomic_read(&helios->retire_stop) &&
-          vn_renderer_helios_retire_feedback_enabled()) {
-         LARGE_INTEGER t0, now, freq;
-         QueryPerformanceFrequency(&freq);
-         QueryPerformanceCounter(&t0);
-         while (!p_atomic_read(&helios->retire_stop)) {
-            mtx_lock(&helios->dev_mutex);
-            const volatile uint64_t *fb = entry->sync->feedback_counter;
-            const bool attached = fb != NULL;
-            const bool observed = attached && *fb >= entry->val;
-            if (attached)
-               fb_outcome = 2;
-            if (observed)
-               helios_stream_feedback_locked(helios, entry);
-            mtx_unlock(&helios->dev_mutex);
-            if (!attached)
-               break; /* detach cannot race the dereference above */
-            if (observed) {
-               complete = true;
-               fb_outcome = 1;
-               break;
-            }
-            QueryPerformanceCounter(&now);
-            const int64_t us =
-               (now.QuadPart - t0.QuadPart) * 1000000 / freq.QuadPart;
-            if (us > 50000)
-               break; /* budget — wire path serves */
-            if (us < 2000) {
-               for (uint32_t p = 0; p < 64; p++)
-                  YieldProcessor();
-               SwitchToThread();
-            } else if (us < 8000) {
-               Sleep(0);
-            } else {
-               Sleep(1);
-            }
-         }
-      }
+      /* Completion comes from the renderer's queue-marker fence through the
+       * KMD used-ring path. No GPU-counter shadow or polling ladder bypasses
+       * transport completion. Stop/deadline still leave the sync unsignaled. */
       if (!complete && !p_atomic_read(&helios->retire_stop)) {
          bool handled = false;
          if (helios->fence_events_supported) {
@@ -2942,14 +2811,6 @@ helios_sync_retire_thread(void *arg)
 
       bool free_sync;
       mtx_lock(&helios->dev_mutex);
-      if (helios->perf.enabled) {
-         if (fb_outcome == 1)
-            helios->perf.retire_fb_fast++;
-         else if (fb_outcome == 2)
-            helios->perf.retire_fb_fallback++;
-         else
-            helios->perf.retire_fb_wire++;
-      }
       if (complete) {
          helios_sync_mark_fence_locked(renderer, entry->sync, entry->fence_id);
          if (helios->perf.enabled) {
@@ -2988,9 +2849,7 @@ helios_sync_retire_thread(void *arg)
 static bool
 helios_retire_enqueue_locked(struct helios *helios,
                              struct helios_sync *sync,
-                             uint64_t fence_id,
-                             uint64_t val,
-                             uint64_t present_cookie)
+                             uint64_t fence_id)
 {
    struct helios_retire_entry *entry = malloc(sizeof(*entry));
    if (!entry)
@@ -2998,10 +2857,6 @@ helios_retire_enqueue_locked(struct helios *helios,
    entry->next = NULL;
    entry->sync = sync;
    entry->fence_id = fence_id;
-   entry->val = val;
-   entry->present_cookie = present_cookie;
-   entry->ctx_id = helios->ctx_id;
-   entry->present_value = present_cookie ? (uint32_t)val : 0;
    {
       LARGE_INTEGER now;
       QueryPerformanceCounter(&now);
@@ -3127,10 +2982,7 @@ helios_perf_write(struct helios *helios, bool final)
               (unsigned long long)helios->perf.retire_lat_hist[3],
               (unsigned long long)helios->perf.retire_lat_hist[4],
               (unsigned long long)helios->perf.retire_lat_hist[5]);
-      fprintf(f, "retire_fb fast=%llu fallback=%llu wire=%llu\n",
-              (unsigned long long)helios->perf.retire_fb_fast,
-              (unsigned long long)helios->perf.retire_fb_fallback,
-              (unsigned long long)helios->perf.retire_fb_wire);
+
    }
    fprintf(f,
            "fence_events supported=%d waits=%ld imm=%ld raced=%ld timeouts=%ld "
@@ -3144,10 +2996,7 @@ helios_perf_write(struct helios *helios, bool final)
            (unsigned long long)helios->perf.shmem_cache_hits,
            (unsigned long long)helios->perf.bo_creates,
            (unsigned long long)helios->perf.bo_maps);
-   fprintf(f, "stream_fb accepted=%llu wire_retired=%llu rejected=%llu\n",
-           (unsigned long long)helios->perf.stream_fb_accepted,
-           (unsigned long long)helios->perf.stream_fb_retired,
-           (unsigned long long)helios->perf.stream_fb_rejected);
+
    fprintf(f, "bo_map_cache cached=%llu wc=%llu uncached=%llu unknown=%llu\n",
            (unsigned long long)helios->perf.bo_map_cached,
            (unsigned long long)helios->perf.bo_map_wc,
@@ -4144,14 +3993,7 @@ helios_submit(struct vn_renderer *renderer, const struct vn_renderer_submit *sub
           * without relying on this process ever waiting on it — hand the
           * (sync, fence) pair to the retire thread. */
          if (fence_id && sync->wddm_local &&
-             !helios_retire_enqueue_locked(helios, sync, fence_id,
-                                           batch->sync_values[j],
-                                           batch->present_feedback &&
-                                           batch->sync_count == 1 &&
-                                           batch->ring_idx != 0 &&
-                                           batch->present_value32 != 0 &&
-                                           batch->sync_values[j] == batch->present_value32
-                                              ? batch->present_cookie : 0)) {
+             !helios_retire_enqueue_locked(helios, sync, fence_id)) {
             result = VK_ERROR_OUT_OF_HOST_MEMORY;
             break;
          }
@@ -4464,8 +4306,7 @@ helios_bo_create_from_device_memory(
          helios_sync_append_locked(renderer, sync, batch->sync_values[j],
                                    fence_id);
          if (fence_id && sync->wddm_local)
-            (void)helios_retire_enqueue_locked(helios, sync, fence_id,
-                                               batch->sync_values[j], 0);
+            (void)helios_retire_enqueue_locked(helios, sync, fence_id);
       }
    }
 

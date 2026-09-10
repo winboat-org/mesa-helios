@@ -43,15 +43,12 @@ void vn_renderer_helios_diag_log(const char *fmt, ...);
 #endif
 
 #if DETECT_OS_WINDOWS
-/* Detach is serialized with the retire worker's actual pointer dereference.
- * Once revoked, this semaphore uses the ordinary wire completion path. */
+/* A present stream must remain an initially-zero, GPU-signaled timeline.
+ * CPU signals/imports revoke eligibility independently of fence retirement. */
 static void
-helios_semaphore_revoke_feedback(struct vn_device *dev, struct vn_semaphore *sem)
+helios_semaphore_revoke_stream_eligibility(struct vn_semaphore *sem)
 {
-   p_atomic_set(&sem->helios_feedback_gpu_only, false);
-   if (sem->permanent.win32_sync)
-      vn_renderer_helios_sync_set_feedback(dev->renderer,
-                                          sem->permanent.win32_sync, NULL);
+   p_atomic_set(&sem->helios_gpu_signals_only, false);
 }
 
 static VkResult
@@ -145,7 +142,7 @@ helios_queue_submit2_perf_write(void)
 #else
            0ul,
 #endif
-           os_time_get_nano() / 1000000ull,
+           (uint64_t)(os_time_get_nano() / 1000000ull),
            helios_queue_submit2_perf.calls,
            helios_queue_submit2_perf.tls_ns / 1000000.0,
            HELIOS_AVG_US(helios_queue_submit2_perf.tls_ns),
@@ -827,11 +824,8 @@ vn_queue_submission_count_batch_feedback(struct vn_queue_submission *submit,
             extra_cmd_count++;
          } else {
 #if DETECT_OS_WINDOWS
-            /* The later host-query resync writes this slot from the CPU.
-             * Revoke BEFORE making that path reachable, including old entries
-             * already queued on the retire worker. Never reattach it. */
-            helios_semaphore_revoke_feedback(
-               vn_device_from_vk(queue->base.vk.base.device), sem);
+            /* A host-query resync is not an eligible present-stream signal. */
+            helios_semaphore_revoke_stream_eligibility(sem);
 #endif
             const uint64_t counter =
                vn_get_signal_semaphore_counter(submit, batch_index, i);
@@ -1740,8 +1734,7 @@ helios_sem_should_forward_host_signal(VkDevice dev_handle,
 static VkResult
 vn_signal_win32_external_semaphore(struct vn_device *dev,
                                    struct vn_semaphore *sem,
-                                   uint64_t value,
-                                   bool can_feedback)
+                                   uint64_t value)
 {
 #if DETECT_OS_WINDOWS
    struct vn_sync_payload *payload = sem->payload;
@@ -1773,8 +1766,6 @@ vn_signal_win32_external_semaphore(struct vn_device *dev,
           value <= UINT32_MAX) {
          batch.present_cookie = sem->helios_present_stream_cookie;
          batch.present_value32 = (uint32_t)value;
-         batch.present_feedback = can_feedback && sem->feedback.slot &&
-            p_atomic_read(&sem->helios_feedback_gpu_only);
       }
    }
 
@@ -1814,7 +1805,7 @@ helios_venus_register_present_stream(VkDevice device,
        sem->external_handle_types !=
           VK_EXTERNAL_SEMAPHORE_HANDLE_TYPE_OPAQUE_WIN32_BIT ||
        sem->payload != &sem->permanent || !sem->permanent.win32_sync ||
-       !p_atomic_read(&sem->helios_feedback_gpu_only) ||
+       !p_atomic_read(&sem->helios_gpu_signals_only) ||
        p_atomic_read(&sem->helios_max_forwarded_host_value) != 0)
       return false;
 
@@ -2054,7 +2045,7 @@ vn_queue_submit(struct vn_queue_submission *submit)
                   ? vn_get_signal_semaphore_counter(submit, i, j)
                   : 1;
             result =
-               vn_signal_win32_external_semaphore(dev, sem, value, queue->can_feedback);
+               vn_signal_win32_external_semaphore(dev, sem, value);
             if (result != VK_SUCCESS) {
                vn_queue_submission_cleanup(submit);
                return vn_error(instance, result);
@@ -3338,22 +3329,8 @@ vn_semaphore_feedback_init(struct vn_device *dev,
 
    assert(sem->type == VK_SEMAPHORE_TYPE_TIMELINE);
 
-   if (sem->is_external) {
-#if DETECT_OS_WINDOWS
-      /* HELIOS feedback-shadow retire (WS2): EXPORTED timelines on this
-       * stack are self-signaled only (queue signal ops in the exporting
-       * process — the present fences; importers never signal), so the
-       * feedback slot is complete for them and gives the retire thread a
-       * sub-ms completion channel that bypasses the wire-fence response
-       * (measured 10-20 ms through QEMU's fence delivery). The wait/read
-       * paths keep their win32/WDDM-fold priority — the slot only ever
-       * ADDS an observer. HELIOS_RETIRE_FEEDBACK=0 restores the skip. */
-      if (!vn_renderer_helios_retire_feedback_enabled())
-         return VK_SUCCESS;
-#else
+   if (sem->is_external)
       return VK_SUCCESS;
-#endif
-   }
 
 #if DETECT_OS_WINDOWS
    if (debug_get_bool_option("HELIOS_DISABLE_INTERNAL_SEM_FEEDBACK", false)) {
@@ -3509,7 +3486,7 @@ vn_CreateSemaphore(VkDevice device,
     * skipped. vk_zalloc already zeroed it; this makes non-zero initialValue
     * explicit. */
    sem->helios_max_forwarded_host_value = initial_val;
-   sem->helios_feedback_gpu_only = initial_val == 0;
+   sem->helios_gpu_signals_only = initial_val == 0;
 #endif
 
    const struct VkExportSemaphoreCreateInfo *export_info =
@@ -3533,15 +3510,6 @@ vn_CreateSemaphore(VkDevice device,
          goto out_payloads_fini;
    }
 
-#if DETECT_OS_WINDOWS
-   /* Feedback-shadow retire: hand the slot's GPU-written counter to the
-    * exported sync so the retire thread can observe completion through it
-    * (detached in vn_DestroySemaphore BEFORE the slot is pool-recycled). */
-   if (sem->feedback.slot && sem->permanent.win32_sync)
-      vn_renderer_helios_sync_set_feedback(dev->renderer,
-                                           sem->permanent.win32_sync,
-                                           sem->feedback.slot->counter);
-#endif
 
    VkSemaphore sem_handle = vn_semaphore_to_handle(sem);
    struct vn_semaphore_create_info local_info;
@@ -3613,15 +3581,6 @@ vn_DestroySemaphore(VkDevice device,
 
    vn_async_vkDestroySemaphore(dev->primary_ring, device, semaphore, NULL);
 
-#if DETECT_OS_WINDOWS
-   /* Detach the feedback counter from the sync BEFORE the slot returns to
-    * the feedback pool — retire entries can outlive the semaphore (they
-    * hold sync refs) and must fall back to the wire fence rather than poll
-    * recycled slot memory. */
-   if (sem->feedback.slot && sem->permanent.win32_sync)
-      vn_renderer_helios_sync_set_feedback(dev->renderer,
-                                           sem->permanent.win32_sync, NULL);
-#endif
 
    if (sem->type == VK_SEMAPHORE_TYPE_TIMELINE)
       vn_semaphore_feedback_fini(dev, sem);
@@ -3835,9 +3794,11 @@ vn_get_semaphore_counter_value(VkDevice dev_handle,
                    "HELIOS: renderer reports DEVICE_LOST on semaphore probe "
                    "(slot=%" PRIu64 ") — treating renderer context as lost",
                    counter);
+#if DETECT_OS_WINDOWS
             vn_renderer_helios_diag_log(
                "HELIOS sem-probe DEVICE_LOST slot=%llu — context lost",
                (unsigned long long)counter);
+#endif
             p_atomic_set(&dev->helios_lost, 1);
             return vn_error(dev->instance, VK_ERROR_DEVICE_LOST);
          }
@@ -3937,6 +3898,7 @@ vn_get_semaphore_counter_value(VkDevice dev_handle,
                    strikes >= max_strikes
                       ? " — treating renderer context as lost"
                       : "");
+#if DETECT_OS_WINDOWS
             vn_renderer_helios_diag_log(
                "HELIOS sem-deadline strike %u/%u slot=%llu renderer=%llu "
                "sem=%llu reason=%s sig_queue=%llu family=%u ring=%u "
@@ -3963,6 +3925,7 @@ vn_get_semaphore_counter_value(VkDevice dev_handle,
                pending_ring_seqno_valid ? pending_ring_seqno : 0,
                pending_ring_done ? 1 : 0,
                strikes >= max_strikes ? " — CONTEXT LOST" : "");
+#endif
             if (strikes >= max_strikes) {
                p_atomic_set(&dev->helios_lost, 1);
                return vn_error(dev->instance, VK_ERROR_DEVICE_LOST);
@@ -4071,7 +4034,7 @@ vn_SignalSemaphore(VkDevice device, const VkSemaphoreSignalInfo *pSignalInfo)
     * stand in for work admitted by HE12 or allocation producer publication. */
    if (sem->helios_present_stream_cookie)
       return helios_stream_mutation_refused(dev, "CPU signal");
-   helios_semaphore_revoke_feedback(dev, sem);
+   helios_semaphore_revoke_stream_eligibility(sem);
 #endif
 
    /* Helios: the HOST timeline for a WDDM-folded semaphore is advanced
@@ -4350,7 +4313,7 @@ vn_ImportSemaphoreFdKHR(
 #if DETECT_OS_WINDOWS
    if (sem->helios_present_stream_cookie)
       return helios_stream_mutation_refused(dev, "fd import");
-   helios_semaphore_revoke_feedback(dev, sem);
+   helios_semaphore_revoke_stream_eligibility(sem);
 #endif
    ASSERTED const bool sync_file =
       pImportSemaphoreFdInfo->handleType ==
@@ -4442,7 +4405,7 @@ vn_ImportSemaphoreWin32HandleKHR(
       vn_semaphore_from_handle(pImportSemaphoreWin32HandleInfo->semaphore);
    if (sem->helios_present_stream_cookie)
       return helios_stream_mutation_refused(dev, "Win32 import");
-   helios_semaphore_revoke_feedback(dev, sem);
+   helios_semaphore_revoke_stream_eligibility(sem);
    struct vn_sync_payload *temp = &sem->temporary;
    struct vn_renderer_sync *sync = NULL;
    VkResult result;

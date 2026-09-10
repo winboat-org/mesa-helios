@@ -2839,3 +2839,55 @@ vn_CmdPushDataEXT(VkCommandBuffer commandBuffer,
 {
    VN_CMD_ENQUEUE(vkCmdPushDataEXT, commandBuffer, pPushDataInfo);
 }
+
+/* VK_EXT_device_generated_commands */
+VKAPI_ATTR void VKAPI_CALL
+vn_CmdPreprocessGeneratedCommandsEXT(
+   VkCommandBuffer commandBuffer,
+   const VkGeneratedCommandsInfoEXT *pGeneratedCommandsInfo,
+   VkCommandBuffer stateCommandBuffer)
+{
+   struct vn_command_buffer *cmd = vn_command_buffer_from_handle(commandBuffer);
+   struct vn_command_buffer *state = vn_command_buffer_from_handle(stateCommandBuffer);
+
+   /* Both buffers are externally synchronized by the caller. Preserve the
+    * state buffer's current recording prefix, then materialize preprocessing
+    * before the caller can record further state into either buffer. This is
+    * command serialization only; it does not submit GPU work or wait idle.
+    */
+   vn_cmd_submit(state);
+   if (state->base.vk.state == MESA_VK_COMMAND_BUFFER_STATE_INVALID) {
+      cmd->base.vk.state = MESA_VK_COMMAND_BUFFER_STATE_INVALID;
+      return;
+   }
+   VN_CMD_ENQUEUE(vkCmdPreprocessGeneratedCommandsEXT, commandBuffer,
+                  pGeneratedCommandsInfo, stateCommandBuffer);
+   vn_cmd_submit(cmd);
+}
+
+VKAPI_ATTR void VKAPI_CALL
+vn_CmdExecuteGeneratedCommandsEXT(
+   VkCommandBuffer commandBuffer, VkBool32 isPreprocessed,
+   const VkGeneratedCommandsInfoEXT *pGeneratedCommandsInfo)
+{
+   VN_CMD_ENQUEUE(vkCmdExecuteGeneratedCommandsEXT, commandBuffer,
+                  isPreprocessed, pGeneratedCommandsInfo);
+}
+
+VKAPI_ATTR void VKAPI_CALL
+vn_CmdSetCoverageModulationModeNV(VkCommandBuffer commandBuffer, VkCoverageModulationModeNV coverageModulationMode)
+{
+   VN_CMD_ENQUEUE(vkCmdSetCoverageModulationModeNV, commandBuffer, coverageModulationMode);
+}
+
+VKAPI_ATTR void VKAPI_CALL
+vn_CmdSetCoverageModulationTableEnableNV(VkCommandBuffer commandBuffer, VkBool32 coverageModulationTableEnable)
+{
+   VN_CMD_ENQUEUE(vkCmdSetCoverageModulationTableEnableNV, commandBuffer, coverageModulationTableEnable);
+}
+
+VKAPI_ATTR void VKAPI_CALL
+vn_CmdSetCoverageModulationTableNV(VkCommandBuffer commandBuffer, uint32_t coverageModulationTableCount, const float *pCoverageModulationTable)
+{
+   VN_CMD_ENQUEUE(vkCmdSetCoverageModulationTableNV, commandBuffer, coverageModulationTableCount, pCoverageModulationTable);
+}

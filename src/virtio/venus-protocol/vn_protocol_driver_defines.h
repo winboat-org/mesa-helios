@@ -476,6 +476,23 @@ typedef enum VkCommandTypeEXT {
     VK_COMMAND_TYPE_vkGetPhysicalDeviceDescriptorSizeEXT_EXT = 343,
     VK_COMMAND_TYPE_vkRegisterCustomBorderColorEXT_EXT = 344,
     VK_COMMAND_TYPE_vkUnregisterCustomBorderColorEXT_EXT = 345,
+    VK_COMMAND_TYPE_vkCmdEndRendering2KHR_EXT = 346,
+    VK_COMMAND_TYPE_vkCmdEndRendering2EXT_EXT = 346,
+    VK_COMMAND_TYPE_vkCmdSetPrimitiveRestartIndexEXT_EXT = 347,
+    VK_COMMAND_TYPE_vkCmdCopyMemoryIndirectKHR_EXT = 348,
+    VK_COMMAND_TYPE_vkCmdCopyMemoryToImageIndirectKHR_EXT = 349,
+    VK_COMMAND_TYPE_vkCmdSetCoverageModulationModeNV_EXT = 350,
+    VK_COMMAND_TYPE_vkCmdSetCoverageModulationTableEnableNV_EXT = 351,
+    VK_COMMAND_TYPE_vkCmdSetCoverageModulationTableNV_EXT = 352,
+    VK_COMMAND_TYPE_vkGetGeneratedCommandsMemoryRequirementsEXT_EXT = 353,
+    VK_COMMAND_TYPE_vkCmdPreprocessGeneratedCommandsEXT_EXT = 354,
+    VK_COMMAND_TYPE_vkCmdExecuteGeneratedCommandsEXT_EXT = 355,
+    VK_COMMAND_TYPE_vkCreateIndirectCommandsLayoutEXT_EXT = 356,
+    VK_COMMAND_TYPE_vkDestroyIndirectCommandsLayoutEXT_EXT = 357,
+    VK_COMMAND_TYPE_vkCreateIndirectExecutionSetEXT_EXT = 358,
+    VK_COMMAND_TYPE_vkDestroyIndirectExecutionSetEXT_EXT = 359,
+    VK_COMMAND_TYPE_vkUpdateIndirectExecutionSetPipelineEXT_EXT = 360,
+    VK_COMMAND_TYPE_vkUpdateIndirectExecutionSetShaderEXT_EXT = 361,
 } VkCommandTypeEXT;
 
 typedef enum VkCommandFlagBitsEXT {

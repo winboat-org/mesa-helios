@@ -10,6 +10,75 @@
 
 #include "vn_protocol_driver_types.h"
 
+/* VK_DEFINE_NON_DISPATCHABLE_HANDLE(VkDescriptorUpdateTemplate) */
+
+static inline size_t
+vn_sizeof_VkDescriptorUpdateTemplate(const VkDescriptorUpdateTemplate *val)
+{
+    return sizeof(uint64_t);
+}
+
+static inline void
+vn_encode_VkDescriptorUpdateTemplate(struct vn_cs_encoder *enc, const VkDescriptorUpdateTemplate *val)
+{
+    const uint64_t id = vn_cs_handle_load_id((const void **)val, VK_OBJECT_TYPE_DESCRIPTOR_UPDATE_TEMPLATE);
+    vn_encode_uint64_t(enc, &id);
+}
+
+static inline void
+vn_decode_VkDescriptorUpdateTemplate(struct vn_cs_decoder *dec, VkDescriptorUpdateTemplate *val)
+{
+    uint64_t id;
+    vn_decode_uint64_t(dec, &id);
+    vn_cs_handle_store_id((void **)val, id, VK_OBJECT_TYPE_DESCRIPTOR_UPDATE_TEMPLATE);
+}
+
+/* VK_DEFINE_NON_DISPATCHABLE_HANDLE(VkSamplerYcbcrConversion) */
+
+static inline size_t
+vn_sizeof_VkSamplerYcbcrConversion(const VkSamplerYcbcrConversion *val)
+{
+    return sizeof(uint64_t);
+}
+
+static inline void
+vn_encode_VkSamplerYcbcrConversion(struct vn_cs_encoder *enc, const VkSamplerYcbcrConversion *val)
+{
+    const uint64_t id = vn_cs_handle_load_id((const void **)val, VK_OBJECT_TYPE_SAMPLER_YCBCR_CONVERSION);
+    vn_encode_uint64_t(enc, &id);
+}
+
+static inline void
+vn_decode_VkSamplerYcbcrConversion(struct vn_cs_decoder *dec, VkSamplerYcbcrConversion *val)
+{
+    uint64_t id;
+    vn_decode_uint64_t(dec, &id);
+    vn_cs_handle_store_id((void **)val, id, VK_OBJECT_TYPE_SAMPLER_YCBCR_CONVERSION);
+}
+
+/* VK_DEFINE_NON_DISPATCHABLE_HANDLE(VkPrivateDataSlot) */
+
+static inline size_t
+vn_sizeof_VkPrivateDataSlot(const VkPrivateDataSlot *val)
+{
+    return sizeof(uint64_t);
+}
+
+static inline void
+vn_encode_VkPrivateDataSlot(struct vn_cs_encoder *enc, const VkPrivateDataSlot *val)
+{
+    const uint64_t id = vn_cs_handle_load_id((const void **)val, VK_OBJECT_TYPE_PRIVATE_DATA_SLOT);
+    vn_encode_uint64_t(enc, &id);
+}
+
+static inline void
+vn_decode_VkPrivateDataSlot(struct vn_cs_decoder *dec, VkPrivateDataSlot *val)
+{
+    uint64_t id;
+    vn_decode_uint64_t(dec, &id);
+    vn_cs_handle_store_id((void **)val, id, VK_OBJECT_TYPE_PRIVATE_DATA_SLOT);
+}
+
 /* VK_DEFINE_HANDLE(VkInstance) */
 
 static inline size_t
@@ -585,50 +654,50 @@ vn_decode_VkPipelineCache(struct vn_cs_decoder *dec, VkPipelineCache *val)
     vn_cs_handle_store_id((void **)val, id, VK_OBJECT_TYPE_PIPELINE_CACHE);
 }
 
-/* VK_DEFINE_NON_DISPATCHABLE_HANDLE(VkDescriptorUpdateTemplate) */
+/* VK_DEFINE_NON_DISPATCHABLE_HANDLE(VkIndirectCommandsLayoutEXT) */
 
 static inline size_t
-vn_sizeof_VkDescriptorUpdateTemplate(const VkDescriptorUpdateTemplate *val)
+vn_sizeof_VkIndirectCommandsLayoutEXT(const VkIndirectCommandsLayoutEXT *val)
 {
     return sizeof(uint64_t);
 }
 
 static inline void
-vn_encode_VkDescriptorUpdateTemplate(struct vn_cs_encoder *enc, const VkDescriptorUpdateTemplate *val)
+vn_encode_VkIndirectCommandsLayoutEXT(struct vn_cs_encoder *enc, const VkIndirectCommandsLayoutEXT *val)
 {
-    const uint64_t id = vn_cs_handle_load_id((const void **)val, VK_OBJECT_TYPE_DESCRIPTOR_UPDATE_TEMPLATE);
+    const uint64_t id = vn_cs_handle_load_id((const void **)val, VK_OBJECT_TYPE_INDIRECT_COMMANDS_LAYOUT_EXT);
     vn_encode_uint64_t(enc, &id);
 }
 
 static inline void
-vn_decode_VkDescriptorUpdateTemplate(struct vn_cs_decoder *dec, VkDescriptorUpdateTemplate *val)
+vn_decode_VkIndirectCommandsLayoutEXT(struct vn_cs_decoder *dec, VkIndirectCommandsLayoutEXT *val)
 {
     uint64_t id;
     vn_decode_uint64_t(dec, &id);
-    vn_cs_handle_store_id((void **)val, id, VK_OBJECT_TYPE_DESCRIPTOR_UPDATE_TEMPLATE);
+    vn_cs_handle_store_id((void **)val, id, VK_OBJECT_TYPE_INDIRECT_COMMANDS_LAYOUT_EXT);
 }
 
-/* VK_DEFINE_NON_DISPATCHABLE_HANDLE(VkSamplerYcbcrConversion) */
+/* VK_DEFINE_NON_DISPATCHABLE_HANDLE(VkIndirectExecutionSetEXT) */
 
 static inline size_t
-vn_sizeof_VkSamplerYcbcrConversion(const VkSamplerYcbcrConversion *val)
+vn_sizeof_VkIndirectExecutionSetEXT(const VkIndirectExecutionSetEXT *val)
 {
     return sizeof(uint64_t);
 }
 
 static inline void
-vn_encode_VkSamplerYcbcrConversion(struct vn_cs_encoder *enc, const VkSamplerYcbcrConversion *val)
+vn_encode_VkIndirectExecutionSetEXT(struct vn_cs_encoder *enc, const VkIndirectExecutionSetEXT *val)
 {
-    const uint64_t id = vn_cs_handle_load_id((const void **)val, VK_OBJECT_TYPE_SAMPLER_YCBCR_CONVERSION);
+    const uint64_t id = vn_cs_handle_load_id((const void **)val, VK_OBJECT_TYPE_INDIRECT_EXECUTION_SET_EXT);
     vn_encode_uint64_t(enc, &id);
 }
 
 static inline void
-vn_decode_VkSamplerYcbcrConversion(struct vn_cs_decoder *dec, VkSamplerYcbcrConversion *val)
+vn_decode_VkIndirectExecutionSetEXT(struct vn_cs_decoder *dec, VkIndirectExecutionSetEXT *val)
 {
     uint64_t id;
     vn_decode_uint64_t(dec, &id);
-    vn_cs_handle_store_id((void **)val, id, VK_OBJECT_TYPE_SAMPLER_YCBCR_CONVERSION);
+    vn_cs_handle_store_id((void **)val, id, VK_OBJECT_TYPE_INDIRECT_EXECUTION_SET_EXT);
 }
 
 /* VK_DEFINE_NON_DISPATCHABLE_HANDLE(VkAccelerationStructureKHR) */
@@ -677,27 +746,27 @@ vn_decode_VkDeferredOperationKHR(struct vn_cs_decoder *dec, VkDeferredOperationK
     vn_cs_handle_store_id((void **)val, id, VK_OBJECT_TYPE_DEFERRED_OPERATION_KHR);
 }
 
-/* VK_DEFINE_NON_DISPATCHABLE_HANDLE(VkPrivateDataSlot) */
+/* VK_DEFINE_NON_DISPATCHABLE_HANDLE(VkShaderEXT) */
 
 static inline size_t
-vn_sizeof_VkPrivateDataSlot(const VkPrivateDataSlot *val)
+vn_sizeof_VkShaderEXT(const VkShaderEXT *val)
 {
     return sizeof(uint64_t);
 }
 
 static inline void
-vn_encode_VkPrivateDataSlot(struct vn_cs_encoder *enc, const VkPrivateDataSlot *val)
+vn_encode_VkShaderEXT(struct vn_cs_encoder *enc, const VkShaderEXT *val)
 {
-    const uint64_t id = vn_cs_handle_load_id((const void **)val, VK_OBJECT_TYPE_PRIVATE_DATA_SLOT);
+    const uint64_t id = vn_cs_handle_load_id((const void **)val, VK_OBJECT_TYPE_SHADER_EXT);
     vn_encode_uint64_t(enc, &id);
 }
 
 static inline void
-vn_decode_VkPrivateDataSlot(struct vn_cs_decoder *dec, VkPrivateDataSlot *val)
+vn_decode_VkShaderEXT(struct vn_cs_decoder *dec, VkShaderEXT *val)
 {
     uint64_t id;
     vn_decode_uint64_t(dec, &id);
-    vn_cs_handle_store_id((void **)val, id, VK_OBJECT_TYPE_PRIVATE_DATA_SLOT);
+    vn_cs_handle_store_id((void **)val, id, VK_OBJECT_TYPE_SHADER_EXT);
 }
 
 /* VK_DEFINE_NON_DISPATCHABLE_HANDLE(VkTensorARM) */

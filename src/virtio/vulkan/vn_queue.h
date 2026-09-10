@@ -287,9 +287,8 @@ struct vn_semaphore {
     * exact OPAQUE_WIN32 exported timeline.  It is not inferred from a handle,
     * queue, process, or creation order. */
    uint64_t helios_present_stream_cookie;
-   /* Initially-zero, never CPU-signaled/imported/resynchronized. Revocation
-    * detaches the backend feedback VA before any CPU resynchronization. */
-   uint32_t helios_feedback_gpu_only;
+   /* Initially-zero, never CPU-signaled/imported/resynchronized. */
+   uint32_t helios_gpu_signals_only;
 #endif
 };
 VK_DEFINE_NONDISP_HANDLE_CASTS(vn_semaphore,

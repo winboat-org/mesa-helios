@@ -160,28 +160,28 @@ vn_encode_VkRingPriorityInfoMESA(struct vn_cs_encoder *enc, const VkRingPriority
 static inline size_t
 vn_sizeof_VkRingCreateInfoMESA_pnext(const void *val)
 {
-    const VkBaseInStructure *pnext = val;
+    const void *pnext = val;
     size_t size = 0;
 
     while (pnext) {
-        switch ((int32_t)pnext->sType) {
+        switch ((int32_t)(*(const VkStructureType *)pnext)) {
         case VK_STRUCTURE_TYPE_RING_MONITOR_INFO_MESA:
             size += vn_sizeof_simple_pointer(pnext);
-            size += vn_sizeof_VkStructureType(&pnext->sType);
+            size += vn_sizeof_VkStructureType(pnext);
             size += vn_sizeof_VkRingCreateInfoMESA_pnext(((const VkRingMonitorInfoMESA *)pnext)->pNext);
-            size += vn_sizeof_VkRingMonitorInfoMESA_self((const VkRingMonitorInfoMESA *)pnext);
+            size += vn_sizeof_VkRingMonitorInfoMESA_self(pnext);
             return size;
         case VK_STRUCTURE_TYPE_RING_PRIORITY_INFO_MESA:
             size += vn_sizeof_simple_pointer(pnext);
-            size += vn_sizeof_VkStructureType(&pnext->sType);
+            size += vn_sizeof_VkStructureType(pnext);
             size += vn_sizeof_VkRingCreateInfoMESA_pnext(((const VkRingPriorityInfoMESA *)pnext)->pNext);
-            size += vn_sizeof_VkRingPriorityInfoMESA_self((const VkRingPriorityInfoMESA *)pnext);
+            size += vn_sizeof_VkRingPriorityInfoMESA_self(pnext);
             return size;
         default:
             /* ignore unknown/unsupported struct */
             break;
         }
-        pnext = pnext->pNext;
+        memcpy(&pnext, (const char *)pnext + offsetof(VkBaseInStructure, pNext), sizeof(pnext));
     }
 
     return vn_sizeof_simple_pointer(NULL);
@@ -222,27 +222,27 @@ vn_sizeof_VkRingCreateInfoMESA(const VkRingCreateInfoMESA *val)
 static inline void
 vn_encode_VkRingCreateInfoMESA_pnext(struct vn_cs_encoder *enc, const void *val)
 {
-    const VkBaseInStructure *pnext = val;
+    const void *pnext = val;
 
     while (pnext) {
-        switch ((int32_t)pnext->sType) {
+        switch ((int32_t)(*(const VkStructureType *)pnext)) {
         case VK_STRUCTURE_TYPE_RING_MONITOR_INFO_MESA:
             vn_encode_simple_pointer(enc, pnext);
-            vn_encode_VkStructureType(enc, &pnext->sType);
+            vn_encode_VkStructureType(enc, pnext);
             vn_encode_VkRingCreateInfoMESA_pnext(enc, ((const VkRingMonitorInfoMESA *)pnext)->pNext);
-            vn_encode_VkRingMonitorInfoMESA_self(enc, (const VkRingMonitorInfoMESA *)pnext);
+            vn_encode_VkRingMonitorInfoMESA_self(enc, pnext);
             return;
         case VK_STRUCTURE_TYPE_RING_PRIORITY_INFO_MESA:
             vn_encode_simple_pointer(enc, pnext);
-            vn_encode_VkStructureType(enc, &pnext->sType);
+            vn_encode_VkStructureType(enc, pnext);
             vn_encode_VkRingCreateInfoMESA_pnext(enc, ((const VkRingPriorityInfoMESA *)pnext)->pNext);
-            vn_encode_VkRingPriorityInfoMESA_self(enc, (const VkRingPriorityInfoMESA *)pnext);
+            vn_encode_VkRingPriorityInfoMESA_self(enc, pnext);
             return;
         default:
             /* ignore unknown/unsupported struct */
             break;
         }
-        pnext = pnext->pNext;
+        memcpy(&pnext, (const char *)pnext + offsetof(VkBaseInStructure, pNext), sizeof(pnext));
     }
 
     vn_encode_simple_pointer(enc, NULL);

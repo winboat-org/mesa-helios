@@ -158,22 +158,22 @@ vn_encode_VkFramebufferAttachmentsCreateInfo(struct vn_cs_encoder *enc, const Vk
 static inline size_t
 vn_sizeof_VkFramebufferCreateInfo_pnext(const void *val)
 {
-    const VkBaseInStructure *pnext = val;
+    const void *pnext = val;
     size_t size = 0;
 
     while (pnext) {
-        switch ((int32_t)pnext->sType) {
+        switch ((int32_t)(*(const VkStructureType *)pnext)) {
         case VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENTS_CREATE_INFO:
             size += vn_sizeof_simple_pointer(pnext);
-            size += vn_sizeof_VkStructureType(&pnext->sType);
+            size += vn_sizeof_VkStructureType(pnext);
             size += vn_sizeof_VkFramebufferCreateInfo_pnext(((const VkFramebufferAttachmentsCreateInfo *)pnext)->pNext);
-            size += vn_sizeof_VkFramebufferAttachmentsCreateInfo_self((const VkFramebufferAttachmentsCreateInfo *)pnext);
+            size += vn_sizeof_VkFramebufferAttachmentsCreateInfo_self(pnext);
             return size;
         default:
             /* ignore unknown/unsupported struct */
             break;
         }
-        pnext = pnext->pNext;
+        memcpy(&pnext, (const char *)pnext + offsetof(VkBaseInStructure, pNext), sizeof(pnext));
     }
 
     return vn_sizeof_simple_pointer(NULL);
@@ -215,21 +215,21 @@ vn_sizeof_VkFramebufferCreateInfo(const VkFramebufferCreateInfo *val)
 static inline void
 vn_encode_VkFramebufferCreateInfo_pnext(struct vn_cs_encoder *enc, const void *val)
 {
-    const VkBaseInStructure *pnext = val;
+    const void *pnext = val;
 
     while (pnext) {
-        switch ((int32_t)pnext->sType) {
+        switch ((int32_t)(*(const VkStructureType *)pnext)) {
         case VK_STRUCTURE_TYPE_FRAMEBUFFER_ATTACHMENTS_CREATE_INFO:
             vn_encode_simple_pointer(enc, pnext);
-            vn_encode_VkStructureType(enc, &pnext->sType);
+            vn_encode_VkStructureType(enc, pnext);
             vn_encode_VkFramebufferCreateInfo_pnext(enc, ((const VkFramebufferAttachmentsCreateInfo *)pnext)->pNext);
-            vn_encode_VkFramebufferAttachmentsCreateInfo_self(enc, (const VkFramebufferAttachmentsCreateInfo *)pnext);
+            vn_encode_VkFramebufferAttachmentsCreateInfo_self(enc, pnext);
             return;
         default:
             /* ignore unknown/unsupported struct */
             break;
         }
-        pnext = pnext->pNext;
+        memcpy(&pnext, (const char *)pnext + offsetof(VkBaseInStructure, pNext), sizeof(pnext));
     }
 
     vn_encode_simple_pointer(enc, NULL);
