@@ -573,6 +573,9 @@ vn_physical_device_sanitize_properties(struct vn_physical_device *physical_dev)
 
    snprintf(props->driverName, sizeof(props->driverName), "venus");
    snprintf(props->driverInfo, sizeof(props->driverInfo),
+#if defined(_WIN32) && defined(HELIOS_PUBLISHER_NAME)
+            HELIOS_PUBLISHER_NAME " " HELIOS_PRODUCT_NAME " / "
+#endif
             "Mesa " PACKAGE_VERSION MESA_GIT_SHA1);
 
    props->conformanceVersion.major = 1;

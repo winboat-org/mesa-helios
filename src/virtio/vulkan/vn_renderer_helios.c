@@ -1,5 +1,5 @@
 /*
- * Copyright 2026 Helios vGPU project
+ * Copyright 2026 WinBoat
  * SPDX-License-Identifier: MIT
  *
  * based in part on Mesa's vn_renderer_vtest.c / vn_renderer_virtgpu.c which are:
