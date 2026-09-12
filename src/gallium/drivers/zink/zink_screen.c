@@ -22,6 +22,7 @@
  */
 
 #include "zink_screen.h"
+#include "zink_vendor.h"
 
 #include "zink_kopper.h"
 #include "zink_compiler.h"
@@ -160,6 +161,11 @@ static VkInstance instance;
 static const char *
 zink_get_vendor(struct pipe_screen *pscreen)
 {
+#if DETECT_OS_WINDOWS && defined(HELIOS_PUBLISHER_NAME)
+   /* Only the WinBoat Venus stack carries our publisher identity. */
+   if (zink_driver_is_venus(zink_screen(pscreen)))
+      return HELIOS_PUBLISHER_NAME;
+#endif
    return "Mesa";
 }
 
@@ -199,7 +205,11 @@ zink_set_driver_strings(struct zink_screen *screen)
    assert(written < sizeof(buf));
    screen->device_name = ralloc_strdup(screen, buf);
 
-   written = snprintf(buf, sizeof(buf), "Unknown (vendor-id: 0x%04x)", screen->info.props.vendorID);
+   const char *vendor = zink_device_vendor_name(screen->info.props.vendorID);
+   if (vendor)
+      written = snprintf(buf, sizeof(buf), "%s", vendor);
+   else
+      written = snprintf(buf, sizeof(buf), "Unknown (vendor-id: 0x%04x)", screen->info.props.vendorID);
    if (written < 0)
       return written;
    assert(written < sizeof(buf));
