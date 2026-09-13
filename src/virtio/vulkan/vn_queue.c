@@ -428,6 +428,17 @@ vn_get_wait_semaphore_counter(struct vn_queue_submission *submit,
       return submit->submit2_batches[batch_index]
          .pWaitSemaphoreInfos[sem_index]
          .value;
+   case VK_STRUCTURE_TYPE_BIND_SPARSE_INFO: {
+      /* A sparse batch carries its timeline values the same way a submit does.
+       * This is reached when a queue whose signals use the semaphore feedback
+       * slot binds sparse memory (a D3D12 reserved resource). Without the case
+       * the switch takes the compiled UNREACHABLE path, which has no defined
+       * result. Upstream carries the equivalent case. */
+      const struct VkTimelineSemaphoreSubmitInfo *timeline_sem_info =
+         vk_find_struct_const(submit->sparse_batches[batch_index].pNext,
+                              TIMELINE_SEMAPHORE_SUBMIT_INFO);
+      return timeline_sem_info->pWaitSemaphoreValues[sem_index];
+   }
    default:
       UNREACHABLE("unexpected batch type");
    }
@@ -449,6 +460,12 @@ vn_get_signal_semaphore_counter(struct vn_queue_submission *submit,
       return submit->submit2_batches[batch_index]
          .pSignalSemaphoreInfos[sem_index]
          .value;
+   case VK_STRUCTURE_TYPE_BIND_SPARSE_INFO: {
+      const struct VkTimelineSemaphoreSubmitInfo *timeline_sem_info =
+         vk_find_struct_const(submit->sparse_batches[batch_index].pNext,
+                              TIMELINE_SEMAPHORE_SUBMIT_INFO);
+      return timeline_sem_info->pSignalSemaphoreValues[sem_index];
+   }
    default:
       UNREACHABLE("unexpected batch type");
    }
