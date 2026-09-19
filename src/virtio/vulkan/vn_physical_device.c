@@ -1849,6 +1849,34 @@ vn_physical_device_init(struct vn_physical_device *physical_dev)
    vn_physical_device_init_features(physical_dev);
    vn_physical_device_init_properties(physical_dev);
 
+#if DETECT_OS_WINDOWS
+   /* September19's zero-submit CPU control on NVIDIA 615.71.09 reproduced
+    * different bytes through vkMapMemory and the exported DMA_BUF mmap.
+    * The production Vulkan OPAQUE_FD mapper passed. Helios can use that
+    * mapper through QEMU's blob subregion fallback. Only resources without
+    * an application external handle select this internal export; explicit
+    * DMA_BUF WSI and native Win32 sharing keep their own contracts.
+    * Properties must be initialized before selecting by renderer driver ID.
+    * The Win32 handle choice above supplies the queried opaque export support.
+    * This is a mapping-repair candidate, not Steel Nomad acceptance.
+    */
+   physical_dev->external_memory.opaque_fd_mapping =
+      !instance->renderer->info.has_guest_vram &&
+      physical_dev->renderer_driver_id == VK_DRIVER_ID_NVIDIA_PROPRIETARY &&
+      physical_dev->external_memory.win32_renderer_handle_type ==
+         VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
+   if (VN_DEBUG(INIT)) {
+      vn_log(instance,
+             "cpu_mapping_policy opaque_fd=%u renderer_driver=%u "
+             "guest_vram=%u default_handle=0x%x win32_handle=0x%x",
+             physical_dev->external_memory.opaque_fd_mapping,
+             physical_dev->renderer_driver_id,
+             instance->renderer->info.has_guest_vram,
+             physical_dev->external_memory.renderer_handle_type,
+             physical_dev->external_memory.win32_renderer_handle_type);
+   }
+#endif
+
    /* global priority props caching relies on initialized features */
    result = vn_physical_device_init_queue_family_properties(physical_dev);
    if (result != VK_SUCCESS)

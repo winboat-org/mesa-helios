@@ -76,11 +76,7 @@ vn_dependency_infos_needs_present_fix(uint32_t dep_count,
    return false;
 }
 
-struct vn_cmd_fix_image_memory_barrier_result {
-   bool availability_op_needed; // set src access/stage (flush)
-   bool visibility_op_needed;   // set dst access/stage (invalidate)
-   bool external_acquire_unmodified;
-};
+#include "vn_wsi_ownership.h"
 
 struct vn_cmd_cached_storage {
    VkDependencyInfo *dep_infos;
@@ -209,70 +205,10 @@ vn_cmd_fix_image_memory_barrier_common(const struct vn_image *img,
 {
    assert(VN_PRESENT_SRC_INTERNAL_LAYOUT != VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
-   struct vn_cmd_fix_image_memory_barrier_result result = {
-      .availability_op_needed = true,
-      .visibility_op_needed = true,
-   };
-
-   /* no fix needed */
-   if (*old_layout != VK_IMAGE_LAYOUT_PRESENT_SRC_KHR &&
-       *new_layout != VK_IMAGE_LAYOUT_PRESENT_SRC_KHR)
-      return result;
-
-   /* prime blit src or no layout transition */
-   if (img->wsi.is_prime_blit_src || *old_layout == *new_layout) {
-      if (*old_layout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR)
-         *old_layout = VN_PRESENT_SRC_INTERNAL_LAYOUT;
-      if (*new_layout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR)
-         *new_layout = VN_PRESENT_SRC_INTERNAL_LAYOUT;
-      return result;
-   }
-
-   if (*old_layout == VK_IMAGE_LAYOUT_PRESENT_SRC_KHR) {
-      *old_layout = VN_PRESENT_SRC_INTERNAL_LAYOUT;
-
-      result.availability_op_needed = false;
-      result.external_acquire_unmodified = true;
-
-      if (img->base.vk.sharing_mode == VK_SHARING_MODE_CONCURRENT) {
-         *src_qfi = VK_QUEUE_FAMILY_FOREIGN_EXT;
-         *dst_qfi = VK_QUEUE_FAMILY_IGNORED;
-      } else if (*dst_qfi == *src_qfi || *dst_qfi == cmd_pool_qfi) {
-         *src_qfi = VK_QUEUE_FAMILY_FOREIGN_EXT;
-         *dst_qfi = cmd_pool_qfi;
-      } else {
-         /* The barrier also defines a queue family ownership transfer, and
-          * this is the one that gets submitted to the source queue family to
-          * release the ownership.  Skip both the transfer and the transition.
-          */
-         *src_qfi = VK_QUEUE_FAMILY_IGNORED;
-         *dst_qfi = VK_QUEUE_FAMILY_IGNORED;
-         *new_layout = *old_layout;
-      }
-   } else {
-      *new_layout = VN_PRESENT_SRC_INTERNAL_LAYOUT;
-
-      result.visibility_op_needed = false;
-
-      if (img->base.vk.sharing_mode == VK_SHARING_MODE_CONCURRENT) {
-         *src_qfi = VK_QUEUE_FAMILY_IGNORED;
-         *dst_qfi = VK_QUEUE_FAMILY_FOREIGN_EXT;
-      } else if (*src_qfi == *dst_qfi || *src_qfi == cmd_pool_qfi) {
-         *src_qfi = cmd_pool_qfi;
-         *dst_qfi = VK_QUEUE_FAMILY_FOREIGN_EXT;
-      } else {
-         /* The barrier also defines a queue family ownership transfer, and
-          * this is the one that gets submitted to the destination queue
-          * family to acquire the ownership.  Skip both the transfer and the
-          * transition.
-          */
-         *src_qfi = VK_QUEUE_FAMILY_IGNORED;
-         *dst_qfi = VK_QUEUE_FAMILY_IGNORED;
-         *old_layout = *new_layout;
-      }
-   }
-
-   return result;
+   return vn_wsi_fix_image_memory_barrier(
+      img->wsi.is_prime_blit_src, img->wsi.helios_external_blit_src,
+      img->base.vk.sharing_mode, cmd_pool_qfi,
+      old_layout, new_layout, src_qfi, dst_qfi);
 }
 
 static void

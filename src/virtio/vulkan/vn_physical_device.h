@@ -115,6 +115,9 @@ struct vn_physical_device {
 
    struct {
       VkExternalMemoryHandleTypeFlagBits renderer_handle_type;
+      /* Internal CPU mappings can use a Vulkan OPAQUE_FD import without
+       * changing the handle contract of explicit external/WSI resources. */
+      bool opaque_fd_mapping;
       /* Native Win32 opaque sharing is an object-identity contract, not a
        * scanout contract.  Keep its renderer-side handle independent from
        * renderer_handle_type, which may be DMA_BUF for WSI. */
@@ -180,6 +183,9 @@ vn_renderer_handle_type_for_guest(
    const struct vn_physical_device *physical_dev,
    const VkExternalMemoryHandleTypeFlags guest_handle_types)
 {
+   if (!guest_handle_types && physical_dev->external_memory.opaque_fd_mapping)
+      return VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
+
 #if DETECT_OS_WINDOWS
    if (guest_handle_types ==
           VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT &&

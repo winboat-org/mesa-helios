@@ -55,6 +55,7 @@ struct vn_image {
 
    struct {
       bool is_prime_blit_src;
+      bool helios_external_blit_src;
 
       /* memory backing the prime blit dst buffer */
       struct vn_device_memory *blit_mem;

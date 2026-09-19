@@ -39,6 +39,12 @@ struct wsi_image_create_info {
 
     /* if true, the image is a blit source */
     bool blit_src;
+
+    /* Helios Win32 vehicle: producer retains ownership through the fallback
+     * buffer blit, then releases the original image to another Vulkan instance.
+     * Private Mesa metadata, stripped before the Venus create-image wire call.
+     */
+    bool helios_external_blit_src;
 };
 
 struct wsi_memory_allocate_info {

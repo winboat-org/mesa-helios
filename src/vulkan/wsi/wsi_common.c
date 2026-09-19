@@ -3207,14 +3207,19 @@ wsi_create_buffer_blit_context(const struct wsi_swapchain *chain,
    VkMemoryAllocateInfo buf_mem_info = {
       .sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
       .pNext = &buf_mem_dedicated_info,
-      .allocationSize = info->linear_size,
+      /* The buffer's memory requirements may pad the pixel data size. */
+      .allocationSize = reqs.size,
       .memoryTypeIndex =
          info->select_blit_dst_memory_type(wsi, reqs.memoryTypeBits),
    };
 
    void *sw_host_ptr = NULL;
-   if (info->alloc_shm)
-      sw_host_ptr = info->alloc_shm(image, info->linear_size);
+   if (info->alloc_shm) {
+      /* alloc_shm takes an unsigned size; never truncate a padded allocation. */
+      if (reqs.size > UINT32_MAX)
+         return VK_ERROR_OUT_OF_HOST_MEMORY;
+      sw_host_ptr = info->alloc_shm(image, reqs.size);
+   }
 
    VkExportMemoryAllocateInfo memory_export_info;
    VkImportMemoryHostPointerInfoEXT host_ptr_info;
@@ -3315,7 +3320,13 @@ wsi_cmd_blit_image_to_buffer(VkCommandBuffer cmd_buffer,
       .pNext = NULL,
       .srcAccessMask = 0,
       .dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT,
-      .oldLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+      /* App's PRESENT transition retains the source through this same-device
+       * blit. GENERAL is Venus's internal PRESENT layout; using PRESENT here
+       * would incorrectly acquire it from the external helper before the
+       * helper has even read this frame. Only the opted-in Win32 source uses
+       * this contract. */
+      .oldLayout = info->wsi.helios_external_blit_src
+                      ? VK_IMAGE_LAYOUT_GENERAL : VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
       .newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
       .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
       .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
@@ -3360,6 +3371,13 @@ wsi_cmd_blit_image_to_buffer(VkCommandBuffer cmd_buffer,
    img_mem_barrier.dstAccessMask = 0;
    img_mem_barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
    img_mem_barrier.newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+   if (info->wsi.helios_external_blit_src) {
+      /* Release AFTER the fallback read, before this submit's producer signal.
+       * The helper acquires/releases GENERAL around its actual source read. */
+      img_mem_barrier.newLayout = VK_IMAGE_LAYOUT_GENERAL;
+      img_mem_barrier.srcQueueFamilyIndex = qfi;
+      img_mem_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_EXTERNAL;
+   }
 
    const VkBufferMemoryBarrier buf_mem_barrier = {
       .sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER,
@@ -3383,7 +3401,17 @@ wsi_cmd_blit_image_to_buffer(VkCommandBuffer cmd_buffer,
                            0,
                            0, NULL,
                            1, &buf_mem_barrier,
-                           1, &img_mem_barrier);
+                           info->wsi.helios_external_blit_src ? 0 : 1,
+                           info->wsi.helios_external_blit_src ? NULL : &img_mem_barrier);
+   if (info->wsi.helios_external_blit_src) {
+      /* HOST is required for the fallback buffer's CPU visibility, but is
+       * illegal in an image queue-family transfer (VUID-09633). Keep that
+       * buffer dependency separate from the source's external release. */
+      wsi->CmdPipelineBarrier(cmd_buffer,
+                              VK_PIPELINE_STAGE_TRANSFER_BIT,
+                              VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+                              0, 0, NULL, 0, NULL, 1, &img_mem_barrier);
+   }
 }
 
 static void
@@ -3703,13 +3731,16 @@ wsi_configure_cpu_image(const struct wsi_swapchain *chain,
     * external image info on the VkImage here, VkExportMemoryAllocateInfo on
     * the image's dedicated memory in wsi_create_buffer_blit_context (the
     * export handle types are what flip the blob to USE_SHAREABLE). The blit
-    * BUFFER (the sw fallback's cpu_map) stays private. OPAQUE_FD is venus's
-    * renderer-side handle type on this transport. */
+    * BUFFER (the sw fallback's cpu_map) stays private. The resource-id helper
+    * imports a DMA_BUF, so request that same type for the source image and its
+    * memory. An OPAQUE_FD image is invalid here: Venus translates its memory
+    * export to DMA_BUF but the WSI-marked image bypasses that translation
+    * (VUID-VkBindImageMemoryInfo-memory-02728). */
    VkExternalMemoryHandleTypeFlags helios_image_export = 0;
 #ifdef _WIN32
    if (wsi_helios_vehicle_enabled() &&
        chain->blit.type == WSI_SWAPCHAIN_BUFFER_BLIT) {
-      helios_image_export = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
+      helios_image_export = VK_EXTERNAL_MEMORY_HANDLE_TYPE_DMA_BUF_BIT_EXT;
       assert(handle_types == 0);
       handle_types = helios_image_export;
    }
@@ -3721,6 +3752,8 @@ wsi_configure_cpu_image(const struct wsi_swapchain *chain,
       return result;
 
    info->helios_image_export_handle_types = helios_image_export;
+   info->wsi.helios_external_blit_src = helios_image_export != 0 &&
+      info->create.sharingMode == VK_SHARING_MODE_EXCLUSIVE;
 
    if (chain->blit.type != WSI_SWAPCHAIN_NO_BLIT) {
       wsi_configure_buffer_image(chain, pCreateInfo,

@@ -73,6 +73,29 @@ idep_vulkan_wsi_headers = declare_dependency(
   include_directories : include_directories('.')
 )
 
+if with_tests and not with_platform_windows
+  test('wsi-copy-retirement', executable(
+    'wsi-copy-retirement-test', 'wsi_copy_retirement_test.c',
+    include_directories : [inc_include],
+  ), suite : ['wsi'])
+  test('wsi-image-ownership', executable(
+    'wsi-image-ownership-test', 'wsi_image_ownership_test.c',
+    include_directories : [inc_include, inc_src],
+    dependencies : [idep_vulkan_wsi_headers, idep_vulkan_runtime_headers,
+                    idep_vulkan_util, idep_mesautil],
+    link_with : libvulkan_wsi,
+    link_args : ld_args_gc_sections,
+  ), suite : ['wsi'])
+  test('wsi-buffer-allocation', executable(
+    'wsi-buffer-allocation-test', 'wsi_buffer_allocation_test.c',
+    include_directories : [inc_include, inc_src],
+    dependencies : [idep_vulkan_wsi_headers, idep_vulkan_runtime_headers,
+                    idep_vulkan_util_headers, idep_mesautil],
+    link_with : libvulkan_wsi,
+    link_args : ld_args_gc_sections,
+  ), suite : ['wsi'])
+endif
+
 # This is likely a bug in the Meson VS backend, as MSVC with ninja works fine.
 # See this discussion here:
 # https://gitlab.freedesktop.org/mesa/mesa/-/merge_requests/10506

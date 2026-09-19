@@ -318,6 +318,7 @@ vn_wsi_create_image(struct vn_device *dev,
       return result;
 
    img->wsi.is_prime_blit_src = wsi_info->blit_src;
+   img->wsi.helios_external_blit_src = wsi_info->helios_external_blit_src;
    if (VN_DEBUG(WSI)) {
       vn_log(dev->instance, "%s: legacy_scanout=%d, prime_blit=%d", __func__,
              wsi_info->scanout, wsi_info->blit_src);

@@ -173,3 +173,20 @@ libvulkan_virtio = shared_library(
   name_prefix : host_machine.system() == 'windows' ? '' : [],
   install : true,
 )
+
+if with_tests
+  test('venus-memory-export', executable(
+    'venus-memory-export-test', 'vn_memory_export_test.c',
+    include_directories : vn_incs,
+    dependencies : vn_deps,
+  ), suite : ['venus'])
+  test('venus-wsi-ownership', executable(
+    'venus-wsi-ownership-test', 'vn_wsi_ownership_test.c',
+    include_directories : [inc_include, inc_src],
+  ), suite : ['venus'])
+  test('venus-device-features', executable(
+    'venus-device-features-test', 'vn_device_features_test.c',
+    include_directories : [inc_include, inc_src],
+    dependencies : idep_vulkan_util,
+  ), suite : ['venus'])
+endif

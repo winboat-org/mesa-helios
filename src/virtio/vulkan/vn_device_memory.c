@@ -18,6 +18,7 @@
 #include "vn_buffer.h"
 #include "vn_device.h"
 #include "vn_image.h"
+#include "vn_memory_export.h"
 #include "vn_physical_device.h"
 #include "vn_renderer.h"
 #include "vn_renderer_util.h"
@@ -536,6 +537,28 @@ vn_device_memory_alloc(struct vn_device *dev,
        mem_vk->export_handle_types != renderer_handle_type) {
       alloc_info = vn_device_memory_fix_alloc_info(
          alloc_info, renderer_handle_type, has_guest_vram, &local_info);
+   }
+
+   VkMemoryAllocateInfo cpu_map_alloc;
+   VkExportMemoryAllocateInfo cpu_map_export;
+   if (!has_guest_vram && host_visible && !export_alloc &&
+       dev->physical_device->external_memory.opaque_fd_mapping) {
+      /* Match the OPAQUE_FD declarations on ordinary buffers/linear images.
+       * This is an internal mapping export: keep mem_vk/export_handle_types
+       * unchanged, so it neither exposes a new application handle nor turns
+       * an ordinary allocation into a shared WDDM resource.
+       */
+      if (vk_find_struct_const(alloc_info->pNext,
+                               EXPORT_MEMORY_ALLOCATE_INFO)) {
+         alloc_info = vn_device_memory_fix_alloc_info(
+            alloc_info, VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT,
+            false, &local_info);
+      }
+      VkResult result = vn_memory_export_for_cpu_mapping(
+         alloc_info, &cpu_map_alloc, &cpu_map_export);
+      if (result != VK_SUCCESS)
+         return result;
+      alloc_info = &cpu_map_alloc;
    }
 
    if (has_guest_vram && (host_visible || export_alloc)) {

@@ -2299,6 +2299,18 @@ vn_QueueSubmit2(VkQueue _queue,
    } else {
       VN_TRACE_SCOPE("2->1");
 
+      /* An empty submit must still signal its fence. */
+      if (!submitCount) {
+         struct vn_queue_submission submit = {
+            .batch_type = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+            .queue_handle = _queue,
+            .fence_handle = fence,
+         };
+         result = vn_queue_submit(&submit);
+         if (result != VK_SUCCESS)
+            return result;
+      }
+
       for (uint32_t i = 0; i < submitCount; i++) {
          result = vn_queue_submit_2_to_1(
             dev, _queue, &pSubmits[i],

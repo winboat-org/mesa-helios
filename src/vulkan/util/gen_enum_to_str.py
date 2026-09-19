@@ -127,7 +127,7 @@ C_TEMPLATE = Template(textwrap.dedent(u"""\
         case VK_STRUCTURE_TYPE_LOADER_INSTANCE_CREATE_INFO: return sizeof(VkLayerInstanceCreateInfo);
         case VK_STRUCTURE_TYPE_LOADER_DEVICE_CREATE_INFO: return sizeof(VkLayerDeviceCreateInfo);
         default:
-            UNREACHABLE("Undefined struct type.");
+            return 0;
         }
     }
 
@@ -182,6 +182,7 @@ H_TEMPLATE = Template(textwrap.dedent(u"""\
       % endif
     % endfor
 
+    /* Returns zero for unknown structure types. */
     size_t vk_structure_type_size(const struct VkBaseInStructure *item);
 
     const char * vk_ObjectType_to_ObjectName(VkObjectType type);

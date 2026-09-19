@@ -40,6 +40,7 @@
 #include "vk_util.h"
 #include "wsi_common_entrypoints.h"
 #include "wsi_common_private.h"
+#include "wsi_copy_retirement.h"
 
 #define D3D12_IGNORE_SDK_LAYERS
 #include <dxgi1_4.h>
@@ -257,7 +258,7 @@ helios_win32_wsi_perf_note_frame(bool direct, uint64_t copy_ns,
 typedef int32_t (*helios_umd_set_present_source_fn)(
    uint32_t resid, uint64_t fence_value, uint32_t width, uint32_t height,
    uint32_t dxgi_format, uint64_t alloc_size, uint32_t memory_type_index,
-   uintptr_t semaphore_handle);
+   uintptr_t semaphore_handle, const VkImageCreateInfo *source_create_info);
 typedef int32_t (*helios_umd_wait_last_present_fn)(uint32_t timeout_us);
 typedef int32_t (*helios_umd_clear_present_source_fn)(void);
 
@@ -595,6 +596,9 @@ wsi_win32_hwnd_comp_release(struct wsi_win32_vehicle_runtime *rt,
 struct wsi_win32_present_format {
    VkFormat vk_format;
    DXGI_FORMAT dxgi_format;
+   /* The dedicated source import must describe the Vulkan image itself,
+    * even when flip-model requires an UNORM destination swapchain. */
+   DXGI_FORMAT source_dxgi_format;
    DWORD red_mask;
    DWORD green_mask;
    DWORD blue_mask;
@@ -603,12 +607,16 @@ struct wsi_win32_present_format {
 
 static const struct wsi_win32_present_format wsi_win32_present_formats[] = {
    { VK_FORMAT_B8G8R8A8_UNORM, DXGI_FORMAT_B8G8R8A8_UNORM,
+     DXGI_FORMAT_B8G8R8A8_UNORM,
      0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000 },
    { VK_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_R8G8B8A8_UNORM,
+     DXGI_FORMAT_R8G8B8A8_UNORM,
      0x000000ff, 0x0000ff00, 0x00ff0000, 0xff000000 },
    { VK_FORMAT_B8G8R8A8_SRGB, DXGI_FORMAT_B8G8R8A8_UNORM,
+     DXGI_FORMAT_B8G8R8A8_UNORM_SRGB,
      0x00ff0000, 0x0000ff00, 0x000000ff, 0xff000000 },
    { VK_FORMAT_A2B10G10R10_UNORM_PACK32, DXGI_FORMAT_R10G10B10A2_UNORM,
+     DXGI_FORMAT_R10G10B10A2_UNORM,
      0x000003ff, 0x000ffc00, 0x3ff00000, 0xc0000000 },
 };
 
@@ -670,7 +678,7 @@ struct wsi_win32_image {
       uint32_t resid;
       uint64_t alloc_size;
       uint32_t mem_type;
-      /* A terminal copy failure must retain the source even if the app
+      /* An unproven copy must retain the source even if the app
        * immediately destroys this swapchain. Released with device teardown. */
       bool read_unproven;
    } vehicle;
@@ -890,7 +898,7 @@ wsi_win32_vehicle_build(struct wsi_win32_swapchain *chain)
    {
       stage = "helios_umd exports";
       v->set_source = (helios_umd_set_present_source_fn)
-         wsi_win32_vehicle_find_umd_export("helios_umd_set_present_source_v2");
+         wsi_win32_vehicle_find_umd_export("helios_umd_set_present_source_v4");
       v->wait_present = (helios_umd_wait_last_present_fn)
          wsi_win32_vehicle_find_umd_export("helios_umd_wait_present_copy_v2");
       v->clear_source = (helios_umd_clear_present_source_fn)
@@ -1980,54 +1988,95 @@ wsi_win32_vehicle_latch_present_fail(struct wsi_win32_swapchain *chain)
    wsi_win32_vehicle_unbind_content(chain);
 }
 
-/* Wait for the captured helper copy, keeping the source unavailable while
- * pending. The versioned export guarantees that 1 means pending, not a
- * missing context/bridge exception, and that retries never move the target. */
+struct wsi_win32_copy_retirement {
+   struct wsi_win32_swapchain *chain;
+   struct wsi_win32_image *image;
+};
+
+static VkResult
+wsi_win32_copy_presentation_status(void *data)
+{
+   struct wsi_win32_swapchain *chain =
+      ((struct wsi_win32_copy_retirement *)data)->chain;
+   VkResult status = wsi_win32_swapchain_validate_extent(chain);
+   if (status != VK_SUCCESS)
+      return status;
+   if (chain->base.helios_async.enabled) {
+      mtx_lock(&chain->base.helios_async.mutex);
+      const bool stop = chain->base.helios_async.stop;
+      mtx_unlock(&chain->base.helios_async.mutex);
+      if (stop)
+         return VK_ERROR_OUT_OF_DATE_KHR;
+   }
+   return VK_SUCCESS;
+}
+
+static bool
+wsi_win32_copy_device_lost(void *data)
+{
+   struct wsi_win32_vehicle *v =
+      &((struct wsi_win32_copy_retirement *)data)->chain->vehicle;
+   return FAILED(v->dev->GetDeviceRemovedReason());
+}
+
+static int32_t
+wsi_win32_copy_wait(void *data, uint32_t timeout_us)
+{
+   return ((struct wsi_win32_copy_retirement *)data)->chain->vehicle.wait_present(timeout_us);
+}
+
+static uint64_t
+wsi_win32_copy_now(UNUSED void *data)
+{
+   return os_time_get_nano();
+}
+
+static void
+wsi_win32_copy_pending(void *data)
+{
+   struct wsi_win32_copy_retirement *read = (struct wsi_win32_copy_retirement *)data;
+   InterlockedIncrement(&helios_vehicle_wait_timeouts);
+   helios_wsi_vehicle_diag(
+      "copy pending chain=%p resid=%u producer=%" PRIu64 "; image retained",
+      (void *)read->chain, read->image->vehicle.resid, read->image->base.helios_present_value);
+}
+
+/* Window cancellation cannot discharge an already submitted read. Keep the
+ * helper COM device and its same-thread fixed target alive while retiring it.
+ * Five seconds bounds cancellation on the existing host-loss propagation gap;
+ * expiry/failure retains the source, never releases it or claims completion.
+ * Ordinary presentation still has no copy deadline or extra submission.
+ */
 static VkResult
 wsi_win32_wait_vehicle_copy(struct wsi_win32_swapchain *chain,
                            struct wsi_win32_image *image)
 {
-   struct wsi_win32_vehicle *v = &chain->vehicle;
+   static const struct wsi_copy_retirement_ops ops = {
+      wsi_win32_copy_presentation_status, wsi_win32_copy_device_lost,
+      wsi_win32_copy_wait, wsi_win32_copy_now, wsi_win32_copy_pending,
+   };
+   struct wsi_win32_copy_retirement read = {chain, image};
    const uint64_t start = os_time_get_nano();
-   bool pending = false;
-   for (;;) {
-      VkResult status = wsi_win32_swapchain_validate_extent(chain);
-      if (status != VK_SUCCESS)
-         return status;
-
-      if (chain->base.helios_async.enabled) {
-         mtx_lock(&chain->base.helios_async.mutex);
-         const bool stop = chain->base.helios_async.stop;
-         mtx_unlock(&chain->base.helios_async.mutex);
-         if (stop)
-            return VK_ERROR_OUT_OF_DATE_KHR;
-      }
-
-      const int32_t result = v->wait_present(wsi_win32_vehicle_wait_us());
-      if (result == 0) {
-         if (pending)
-            helios_wsi_vehicle_diag(
-               "copy completed after pending chain=%p resid=%u producer=%" PRIu64 " wait_us=%" PRIu64,
-               (void *)chain, image->vehicle.resid, image->base.helios_present_value,
-               (os_time_get_nano() - start) / 1000);
-         return VK_SUCCESS;
-      }
-      if (result != 1) {
-         helios_wsi_vehicle_diag(
-            "copy wait error chain=%p result=%d removed=0x%08lx",
-            (void *)chain, result, (unsigned long)v->dev->GetDeviceRemovedReason());
-         return VK_ERROR_DEVICE_LOST;
-      }
-      if (!pending) {
-         InterlockedIncrement(&helios_vehicle_wait_timeouts);
-         helios_wsi_vehicle_diag(
-            "copy pending chain=%p resid=%u producer=%" PRIu64 "; image retained",
-            (void *)chain, image->vehicle.resid, image->base.helios_present_value);
-         pending = true;
-      }
-      if (FAILED(v->dev->GetDeviceRemovedReason()))
-         return VK_ERROR_DEVICE_LOST;
-   }
+   const struct wsi_copy_retirement_result result = wsi_copy_retire(
+      &ops, &read, wsi_win32_vehicle_wait_us(), UINT64_C(5000000000));
+   image->vehicle.read_unproven = !result.completed;
+   if (result.completed && result.pending)
+      helios_wsi_vehicle_diag(
+         "copy completed after pending chain=%p resid=%u producer=%" PRIu64 " wait_us=%" PRIu64,
+         (void *)chain, image->vehicle.resid, image->base.helios_present_value,
+         (os_time_get_nano() - start) / 1000);
+   if (result.cancelled)
+      helios_wsi_vehicle_diag(
+         "copy retirement after cancellation chain=%p resid=%u producer=%" PRIu64
+         " completed=%u drain_expired=%u result=%d",
+         (void *)chain, image->vehicle.resid, image->base.helios_present_value,
+         result.completed, result.drain_expired, result.status);
+   if (result.status == VK_ERROR_DEVICE_LOST)
+      helios_wsi_vehicle_diag(
+         "copy wait error chain=%p result=%d removed=0x%08lx",
+         (void *)chain, result.status,
+         (unsigned long)chain->vehicle.dev->GetDeviceRemovedReason());
+   return result.status;
 }
 
 /* Pass the exact source dependency to the helper. Copy completion remains
@@ -2083,6 +2132,24 @@ wsi_win32_queue_present_vehicle(struct wsi_win32_swapchain *chain,
       image->vehicle.alloc_size = alloc_size;
       image->vehicle.mem_type = mem_type;
       image->vehicle.resolved = true;
+      /* Once per source image, not per frame: retain the producer's actual
+       * create-info alongside the resid used by the consumer's import log.
+       * Matching allocation sizes alone cannot prove alias compatibility. */
+      const VkImageCreateInfo *ci = &chain->base.image_info.create;
+      helios_wsi_vehicle_diag(
+         "SOURCE chain=%p image=%p resid=%u size=%llu mem_type=%u "
+         "fmt=%u usage=0x%x flags=0x%x type=%u tiling=%u "
+         "extent=%ux%ux%u mips=%u layers=%u samples=%u initial=%u "
+         "sharing=%u view_formats=%u external_release=%u",
+         (void *)chain, (void *)image, resid,
+         (unsigned long long)alloc_size, mem_type,
+         (unsigned)ci->format, (unsigned)ci->usage, (unsigned)ci->flags,
+         (unsigned)ci->imageType, (unsigned)ci->tiling,
+         ci->extent.width, ci->extent.height, ci->extent.depth,
+         ci->mipLevels, ci->arrayLayers, (unsigned)ci->samples,
+         (unsigned)ci->initialLayout, (unsigned)ci->sharingMode,
+         chain->base.image_info.format_list.viewFormatCount,
+         chain->base.image_info.wsi.helios_external_blit_src);
       if (!resid)
          helios_wsi_vehicle_diag(
             "present FAILED chain=%p image=%p: no shareable venus resid "
@@ -2099,10 +2166,29 @@ wsi_win32_queue_present_vehicle(struct wsi_win32_swapchain *chain,
     * it attached the timeline signal to the pre-present submit). */
    const uint64_t value = image->base.helios_present_value;
 
+   /* Borrow the exact host image template through same-thread Present. Remove
+    * only Mesa's private WSI node (vn_CreateImage strips it before the wire
+    * call too). Preserve Vulkan format-list/compression/external parameters;
+    * the helper deep-copies supported metadata or refuses the import loudly. */
+   VkImageCreateInfo source_ci = chain->base.image_info.create;
+   VkExternalMemoryImageCreateInfo external = chain->base.image_info.ext_mem;
+   VkImageCompressionControlEXT compression = chain->base.image_info.img_compr_ctrl;
+   VkImageFormatListCreateInfo formats = chain->base.image_info.format_list;
+   formats.pNext = NULL;
+   compression.pNext = formats.sType ? &formats : NULL;
+   external.pNext = compression.sType ? (const void *)&compression
+                                     : formats.sType ? (const void *)&formats : NULL;
+   source_ci.pNext = external.sType ? (const void *)&external
+                    : compression.sType ? (const void *)&compression
+                    : formats.sType ? (const void *)&formats : NULL;
+
+   const struct wsi_win32_present_format *source_format =
+      wsi_win32_find_present_format(source_ci.format);
+   assert(source_format); /* Validated at swapchain creation. */
    if (v->set_source(image->vehicle.resid, value, chain->extent.width,
-                     chain->extent.height, (uint32_t)v->format,
+                     chain->extent.height, (uint32_t)source_format->source_dxgi_format,
                      image->vehicle.alloc_size, image->vehicle.mem_type,
-                     (uintptr_t)v->producer_handle) < 0) {
+                     (uintptr_t)v->producer_handle, &source_ci) < 0) {
       helios_wsi_vehicle_diag(
          "present FAILED chain=%p: set_present_source refused (resid=%u)",
          (void *)chain, image->vehicle.resid);
@@ -2138,9 +2224,10 @@ wsi_win32_queue_present_vehicle(struct wsi_win32_swapchain *chain,
             ? &helios_vehicle_copy_wait_errors : &helios_vehicle_copy_wait_cancels;
          const LONG n = InterlockedIncrement(counter);
          helios_wsi_vehicle_diag(
-            "copy completion cancelled/failed chain=%p result=%d %s=%ld; image retained",
+            "copy completion cancelled/failed chain=%p result=%d %s=%ld; source_retained=%u",
             (void *)chain, completion,
-            completion == VK_ERROR_DEVICE_LOST ? "wait_err" : "wait_cancel", n);
+            completion == VK_ERROR_DEVICE_LOST ? "wait_err" : "wait_cancel", n,
+            image->vehicle.read_unproven);
          wsi_win32_swapchain_latch_error(chain, completion);
          return false;
       }

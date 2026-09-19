@@ -15,6 +15,7 @@
 #include "venus-protocol/vn_protocol_driver_device.h"
 
 #include "vn_android.h"
+#include "vn_device_features.h"
 #include "vn_instance.h"
 #include "vn_physical_device.h"
 #include "vn_queue.h"
@@ -555,6 +556,24 @@ vn_device_init(struct vn_device *dev,
       dev->device_mask = (1 << group->physicalDeviceCount) - 1;
 
    VkDeviceCreateInfo final_create_info = *create_info;
+   VkBaseOutStructure *host_features = NULL;
+   const struct vk_device_extension_table *app_exts =
+      &dev->base.vk.enabled_extensions;
+   const bool has_wsi = app_exts->KHR_swapchain ||
+                        app_exts->ANDROID_native_buffer ||
+                        app_exts->ANDROID_external_memory_android_hardware_buffer;
+   if (has_wsi && dev->helios_host_timeline_procs &&
+       physical_dev->base.vk.supported_features.timelineSemaphore &&
+       !dev->base.vk.enabled_features.timelineSemaphore) {
+      result = vn_device_features_enable_timeline(
+         alloc, create_info->pNext, &host_features);
+      if (result != VK_SUCCESS) {
+         if (create_info == &local_create_info)
+            vk_free(alloc, (void *)create_info->ppEnabledExtensionNames);
+         return result;
+      }
+      final_create_info.pNext = host_features;
+   }
    STACK_ARRAY(VkDeviceQueueCreateInfo, queue_infos,
                create_info->queueCreateInfoCount);
    for (uint32_t i = 0; i < create_info->queueCreateInfoCount; i++) {
@@ -573,6 +592,7 @@ vn_device_init(struct vn_device *dev,
    result = vn_call_vkCreateDevice(dev->primary_ring, physical_dev_handle,
                                    &final_create_info, NULL, &dev_handle);
    STACK_ARRAY_FINISH(queue_infos);
+   vn_device_features_free(alloc, host_features);
 
    /* free the fixed extensions here since no longer needed below */
    if (create_info == &local_create_info)
@@ -606,8 +626,9 @@ vn_device_init(struct vn_device *dev,
     */
    vn_device_update_shader_cache_id(dev);
 
-   dev->has_sync2 = physical_dev->renderer_version >= VK_API_VERSION_1_3 ||
-                    dev->base.vk.enabled_extensions.KHR_synchronization2;
+   /* API/extension availability does not enable the feature. WSI's internal
+    * Submit2 calls use the existing 2->1 conversion on a legacy app device. */
+   dev->has_sync2 = dev->base.vk.enabled_features.synchronization2;
 
    simple_mtx_init(&dev->mutex, mtx_plain);
    list_inithead(&dev->chains);
