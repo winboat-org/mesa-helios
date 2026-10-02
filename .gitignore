@@ -7,3 +7,10 @@
 /build
 .venv/
 *.mda.tar
+
+# Local standalone devenv state
+/.devenv/
+/.direnv/
+
+/result
+/result-*
