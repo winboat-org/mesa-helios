@@ -255,12 +255,14 @@ helios_win32_wsi_perf_note_frame(bool direct, uint64_t copy_ns,
  * helios_current_ctx_id) got an instance-scoped export the UMD bridge uses.
  */
 
-typedef int32_t (*helios_umd_set_present_source_fn)(
+/* These exports are Rust extern "system": stdcall on Win32. A cdecl caller
+ * would pop the arguments twice and corrupt its present-worker stack. */
+typedef int32_t (WINAPI *helios_umd_set_present_source_fn)(
    uint32_t resid, uint64_t fence_value, uint32_t width, uint32_t height,
    uint32_t dxgi_format, uint64_t alloc_size, uint32_t memory_type_index,
    uintptr_t semaphore_handle, const VkImageCreateInfo *source_create_info);
-typedef int32_t (*helios_umd_wait_last_present_fn)(uint32_t timeout_us);
-typedef int32_t (*helios_umd_clear_present_source_fn)(void);
+typedef int32_t (WINAPI *helios_umd_wait_last_present_fn)(uint32_t timeout_us);
+typedef int32_t (WINAPI *helios_umd_clear_present_source_fn)(void);
 
 enum wsi_win32_vehicle_state {
    WSI_VEHICLE_OFF = 0, /* knob off / not applicable to this chain */
