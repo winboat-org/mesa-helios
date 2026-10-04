@@ -9,7 +9,17 @@
 }:
 assert toolchain == { };
 assert schemaVersion == 1;
-if target == "guest-x64" || target == "guest-x86" then
+if (target == "guest-x64" || target == "guest-x86") && dependencies ? msvcCrossFile then
+  import ./cross-guest.nix {
+    inherit
+      pkgs
+      sources
+      dependencies
+      target
+      configuration
+      ;
+  }
+else if target == "guest-x64" || target == "guest-x86" then
   {
     backend = "devbox";
     purpose = "build";

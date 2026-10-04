@@ -20,6 +20,14 @@ backend. Build and runtime verification are recorded separately; MinGW outputs
 cannot substitute for an MSVC static engine. Licenses and debug symbols must accompany
 exported artifacts.
 
+The environment's guest targets use `cross-guest.nix` on Linux. Supply
+`dependencies.msvcCrossFile`, `msvcSysroot`, `msvcInspector` and the paired
+protocol output from the locked shared toolchain. Both architectures retain
+`/MT`, runtime PDBs, generated protocol headers, exact DirectX-Headers inputs
+and architecture/CRT inspections. Native flex output uses the Windows UCRT
+spellings through the scoped lexer compatibility header. Runtime validation
+still runs in Windows after verified artifact import.
+
 Windows dispatch uses `Build-Guest.ps1` with native clang-cl, the matched
 SDK/WDK and static CRT for x64 or x86. `windows-inputs.nix` supplies the exact
 DirectX-Headers source selected by Mesa's wrap from locked Nixpkgs; downloads
