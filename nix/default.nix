@@ -14,32 +14,31 @@ if target == "guest-x64" || target == "guest-x86" then
     backend = "devbox";
     purpose = "build";
     architecture = if target == "guest-x86" then "x86" else "x64";
-    nativeFile = ./mingw-native.ini;
+    crt = "mt";
     commands = [
       [
-        "meson"
-        "setup"
-        "@buildDirectory@"
-        "@sourceDirectory@"
-        "--wrap-mode=nodownload"
-        "--buildtype"
-        (if configuration == "debug" then "debug" else "release")
-        "--native-file"
-        "@nativeFile@"
-        "-Dvulkan-drivers=virtio"
-        "-Dgallium-drivers=zink"
-        "-Dplatforms=windows"
-      ]
-      [
-        "ninja"
-        "-C"
-        "@buildDirectory@"
+        "powershell.exe"
+        "-NoProfile"
+        "-ExecutionPolicy"
+        "Bypass"
+        "-File"
+        "@sourceDirectory@/nix/Build-Guest.ps1"
+        "-Specification"
+        "@specification@"
       ]
     ];
+    outputs = [
+      "mesa/src/virtio/vulkan/vulkan_virtio.dll"
+      "mesa/src/virtio/vulkan/virtio_icd.json"
+      "mesa/src/gallium/targets/wgl/libgallium_wgl.dll"
+      "mesa/src/gallium/targets/libgl-gdi/opengl32.dll"
+    ];
+    preserveDirectories = [ "protocol-driver" ];
     protocol = dependencies.protocol;
     requirements = [
-      "MinGW-w64-x64-or-x86-static-runtime"
-      "fixed-shader-tools"
+      "LLVM-22.1.8-clang-cl-static-CRT"
+      "Nix-pinned-Mako-PyYAML-Packaging"
+      "WinFlexBison-2.5.25"
       "SDK-10.0.26100.0"
       "fixed-Meson-wrap-closure"
     ];

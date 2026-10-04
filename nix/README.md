@@ -16,6 +16,15 @@ assumes the location of another checkout. The environment's `wb build` prepares
 these snapshots and records full source/toolchain/artifact provenance.
 
 Guest dispatch records require Stage 4's local disk mirror and durable elevated
-backend. They are plans, with runtime verification pending; MinGW outputs cannot
-substitute for an MSVC static engine. Licenses and debug symbols must accompany
+backend. Build and runtime verification are recorded separately; MinGW outputs
+cannot substitute for an MSVC static engine. Licenses and debug symbols must accompany
 exported artifacts.
+
+Windows dispatch uses `Build-Guest.ps1` with native clang-cl, the matched
+SDK/WDK and static CRT for x64 or x86. `windows-inputs.nix` supplies the exact
+DirectX-Headers source selected by Mesa's wrap from locked Nixpkgs; downloads
+remain disabled in Meson. The operation creates its own build source copy,
+regenerates protocol driver headers from the explicit paired Venus source,
+and returns Vulkan, WGL and OpenGL images with generated headers and symbols.
+Shared WinFlex temporary isolation and Python utilities come from the environment
+workspace. Native build and runtime acceptance are tracked there separately.
